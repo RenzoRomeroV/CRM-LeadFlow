@@ -192,10 +192,10 @@ function Banner({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 border-y px-4 py-3 text-sm shadow-sm transition-all duration-300",
+        "flex flex-col gap-3 rounded-lg border px-3 py-3 text-sm shadow-sm transition-all duration-300",
         tone === "primary"
-          ? "border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
-          : "border-border bg-gradient-to-r from-muted/50 via-muted/30 to-transparent",
+          ? "border-primary/20 bg-gradient-to-br from-primary/10 to-transparent"
+          : "border-border bg-gradient-to-br from-muted/50 to-transparent",
       )}
     >
       {children}
@@ -219,7 +219,7 @@ function BannerButton({
       type="button"
       onClick={onClick}
       disabled={busy}
-      className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-muted hover:shadow disabled:opacity-50"
+      className="inline-flex w-full flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-muted hover:shadow disabled:opacity-50"
     >
       {busy ? (
         <Loader2 className="h-4 w-4 animate-spin" />

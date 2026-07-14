@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import type { Contact, Deal, ContactNote, Tag } from "@/types";
+import type { Contact, Deal, ContactNote, Tag, Conversation } from "@/types";
+import { AiThreadBanner } from "./ai-thread-banner";
 import {
   Phone,
   Mail,
@@ -15,6 +16,7 @@ import {
   DollarSign,
   StickyNote,
   Plus,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,13 +25,15 @@ import { useTranslations } from "next-intl";
 
 interface ContactSidebarProps {
   contact: Contact | null;
+  conversation?: Conversation | null;
+  onAssignChange?: (conversationId: string, assigneeId: string | null) => void;
 }
 
-export function ContactSidebar({ contact }: ContactSidebarProps) {
+export function ContactSidebar({ contact, conversation, onAssignChange }: ContactSidebarProps) {
   const tSidebar = useTranslations("Inbox.sidebar");
   const tThread = useTranslations("Inbox.messageThread");
 
-  const { accountId } = useAuth();
+  const { accountId, user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [notes, setNotes] = useState<ContactNote[]>([]);
@@ -296,6 +300,30 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
               </div>
             </div>
           </div>
+          {/* Divider */}
+          <div className="my-4 border-t border-border" />
+
+          {/* AI Assistant */}
+          {conversation && (
+            <div>
+              <div className="mb-2 flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <Sparkles className="h-3 w-3" />
+                Asistente de IA
+              </div>
+              <AiThreadBanner
+                conversationId={conversation.id}
+                disabled={conversation.ai_autoreply_disabled ?? false}
+                handoffSummary={conversation.ai_handoff_summary}
+                assignedAgentId={conversation.assigned_agent_id}
+                currentUserId={user?.id}
+                onChange={(patch) => {
+                  if ("assigned_agent_id" in patch) {
+                    onAssignChange?.(conversation.id, patch.assigned_agent_id ?? null);
+                  }
+                }}
+              />
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>
