@@ -1589,7 +1589,7 @@
       "nameLabel": "Nombre",
       "namePlaceholder": "ej. Automatización Zapier",
       "scopesLabel": "Permisos",
-      "scopesHint": "Una clave sin permisos todavía puede llamar a <code className=\"text-[11px]\">GET /api/v1/me</code> para comprobar que funciona.",
+      "scopesHint": "Una clave sin permisos todavía puede llamar a <code>GET /api/v1/me</code> para comprobar que funciona.",
       "cancel": "Cancelar",
       "creating": "Creando…",
       "createKey": "Crear clave",
