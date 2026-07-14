@@ -108,8 +108,7 @@ export function AiUsageCard() {
               <BarChart3 className="h-4 w-4 text-primary" /> Token usage
             </CardTitle>
             <CardDescription>
-              Tokens spent on your provider key by drafts and the auto-reply
-              bot. Counts only — no message content is stored here.
+              Tokens gastados en tu clave de proveedor por borradores y el bot de respuesta automática. Solo se muestran los recuentos; el contenido de los mensajes no se almacena aquí.
             </CardDescription>
           </div>
           <Select
@@ -135,9 +134,9 @@ export function AiUsageCard() {
         ) : !hasSpend ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground">
             <BarChart3 className="h-8 w-8 opacity-40" />
-            <p>No AI usage in the last {data.window_days} days yet.</p>
+            <p>No se ha utilizado inteligencia artificial en los últimos {data.window_days} días.</p>
             <p className="text-xs">
-              This fills in as the assistant drafts and auto-replies.
+              Esto se utiliza cuando el asistente redacta y responde automáticamente.
             </p>
           </div>
         ) : (

@@ -2,6 +2,7 @@
 
 import { PasswordForm } from './password-form';
 import { SessionsCard } from './sessions-card';
+import { MFACard } from './mfa-card';
 import { SettingsPanelHead } from './settings-panel-head';
 import { useTranslations } from 'next-intl';
 
@@ -18,6 +19,7 @@ export function SecurityPanel() {
         description={t('description')}
       />
       <div className="space-y-4">
+        <MFACard />
         <PasswordForm />
         <SessionsCard />
       </div>

@@ -167,7 +167,7 @@ export default function NotificationsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Conversations other teammates assign to you show up here.
+            Las conversaciones que te asignen tus compañeros de equipo aparecen aquí.
           </p>
         </div>
         <Button
@@ -181,7 +181,7 @@ export default function NotificationsPage() {
           ) : (
             <CheckCheck className="h-4 w-4" />
           )}
-          Mark all as read
+          Marcar todo como leído
         </Button>
       </div>
 
@@ -191,11 +191,10 @@ export default function NotificationsPage() {
             <Bell className="h-6 w-6 text-primary" />
           </div>
           <p className="mt-3 text-sm font-medium text-foreground">
-            No notifications yet
+            Aún no hay notificaciones
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            You&apos;ll see an alert here when someone assigns you a
-            conversation.
+            Recibirás una notificación aquí cuando alguien te asigne una conversación.
           </p>
         </div>
       ) : (

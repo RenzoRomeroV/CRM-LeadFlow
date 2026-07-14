@@ -69,6 +69,23 @@ export async function middleware(request: NextRequest) {
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
+  // MFA Enforcement
+  if (user && user.user_metadata?.mfa_enabled === true) {
+    const mfaVerified = request.cookies.get('mfa_verified')?.value === 'true'
+    if (
+      !mfaVerified && 
+      !request.nextUrl.pathname.startsWith('/auth/mfa') && 
+      !request.nextUrl.pathname.startsWith('/api/auth/mfa') &&
+      !request.nextUrl.pathname.startsWith('/login') &&
+      !request.nextUrl.pathname.startsWith('/_next')
+    ) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/mfa'
+      url.search = ''
+      return withRefreshedCookies(NextResponse.redirect(url))
+    }
+  }
+
   // Protected pages - redirect to login if not authenticated
   const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', '/automations', '/settings']
   if (!user && protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
