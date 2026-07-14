@@ -1362,7 +1362,7 @@
       "videoHint": " Recomendado: MP4 / 3GPP, ≤16 MB, ≤60 segundos.",
       "documentHint": " Recomendado: PDF, ≤100 MB.",
       "bodyText": "Texto del Cuerpo",
-      "bodyPlaceholder": "Hola {{1}}, tu pedido {{2}} está confirmado.",
+      "bodyPlaceholder": "Hola '{{'1'}}', tu pedido '{{'2'}}' está confirmado.",
       "bodyHint": "Usa '{{1}}', '{{2}}' para variables (deben ser contiguas empezando en '{{1}}').",
       "sampleValues": "Valores de muestra (Meta los usa para revisar tu plantilla)",
       "sampleAria": "Valor de muestra para variable de cuerpo {var}",
