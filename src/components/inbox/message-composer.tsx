@@ -538,6 +538,19 @@ export function MessageComposer({
 
   // ---- Render --------------------------------------------------------
 
+  if (aiActive) {
+    return (
+      <div className="border-t border-border bg-card p-3">
+        <div className="flex items-center justify-center gap-2 rounded-lg bg-primary/5 px-3 py-4">
+          <Bot className="h-5 w-5 text-primary" />
+          <p className="text-sm text-primary font-medium">
+            El asistente de IA está activo respondiendo. Toma el control para escribir.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="border-t border-border bg-card p-3">
       {replyTo && (
@@ -549,7 +562,7 @@ export function MessageComposer({
           />
         </div>
       )}
-      {sessionExpired ? (
+      {sessionExpired && (
         <div className="mb-2 flex items-center justify-between rounded-lg bg-amber-500/10 px-3 py-2">
           <p className="text-xs text-amber-400">
             {t("sessionExpiredHint")}
@@ -564,14 +577,7 @@ export function MessageComposer({
             {t("templates")}
           </Button>
         </div>
-      ) : aiActive ? (
-        <div className="mb-2 flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2">
-          <Bot className="h-4 w-4 text-primary" />
-          <p className="text-xs text-primary font-medium">
-            El asistente de IA está activo respondiendo. Toma el control para escribir.
-          </p>
-        </div>
-      ) : null}
+      )}
 
       {/* Hidden file inputs driven by the attach menu. */}
       <input
