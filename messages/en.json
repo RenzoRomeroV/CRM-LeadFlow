@@ -1363,7 +1363,7 @@
       "documentHint": " Recomendado: PDF, ≤100 MB.",
       "bodyText": "Texto del Cuerpo",
       "bodyPlaceholder": "Hola {{1}}, tu pedido {{2}} está confirmado.",
-      "bodyHint": "Usa {{1}}, {{2}} para variables (deben ser contiguas empezando en {{1}}).",
+      "bodyHint": "Usa '{{1}}', '{{2}}' para variables (deben ser contiguas empezando en '{{1}}').",
       "sampleValues": "Valores de muestra (Meta los usa para revisar tu plantilla)",
       "sampleAria": "Valor de muestra para variable de cuerpo {var}",
       "samplePlaceholder": "Muestra para {var}",
@@ -1495,6 +1495,7 @@
       "fields": "Campos y etiquetas",
       "deals": "Acuerdos y moneda",
       "members": "Miembros del equipo",
+      "quick-replies": "Respuestas rápidas",
       "api": "Claves API"
     },
     "groups": {
