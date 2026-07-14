@@ -70,31 +70,31 @@ export const THEMES: ReadonlyArray<ThemeMeta> = [
   {
     id: "violet",
     name: "Violet",
-    tagline: "The default — confident, slightly playful.",
+    tagline: "El predeterminado — seguro, ligeramente divertido.",
     swatch: "oklch(0.526 0.247 293)",
   },
   {
     id: "emerald",
     name: "Emerald",
-    tagline: "Growth-coded, nods at messaging without copying WhatsApp green.",
+    tagline: "Enfocado al crecimiento, un guiño a la mensajería sin copiar el verde de WhatsApp.",
     swatch: "oklch(0.62 0.16 162)",
   },
   {
     id: "cobalt",
     name: "Cobalt",
-    tagline: "Clean B2B-SaaS blue — calm and product-y.",
+    tagline: "Azul limpio B2B-SaaS — tranquilo y orientado al producto.",
     swatch: "oklch(0.585 0.2 254)",
   },
   {
     id: "amber",
     name: "Amber",
-    tagline: "Warm and friendly — feels good for SMB teams.",
+    tagline: "Cálido y amigable — ideal para equipos de pequeñas y medianas empresas.",
     swatch: "oklch(0.745 0.16 65)",
   },
   {
     id: "rose",
     name: "Rose",
-    tagline: "Bold and modern — D2C, creator-economy, lifestyle.",
+    tagline: "Audaz y moderno — ideal para D2C, creadores de contenido y estilo de vida.",
     swatch: "oklch(0.645 0.22 16)",
   },
 ];
