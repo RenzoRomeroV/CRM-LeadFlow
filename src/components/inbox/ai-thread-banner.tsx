@@ -141,15 +141,20 @@ export function AiThreadBanner({
   if (paused) {
     return (
       <Banner tone="muted">
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-foreground">{t("pausedTitle")}</p>
-          {handoffSummary && (
-            <p className="truncate text-muted-foreground" title={handoffSummary}>
-              {handoffSummary}
-            </p>
-          )}
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted-foreground/10 text-muted-foreground">
+            <Undo2 className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col">
+            <p className="font-semibold text-foreground">{t("pausedTitle")}</p>
+            {handoffSummary && (
+              <p className="truncate text-xs text-muted-foreground" title={handoffSummary}>
+                {handoffSummary}
+              </p>
+            )}
+          </div>
         </div>
-        <BannerButton onClick={() => toggle(false)} busy={busy} icon={Undo2}>
+        <BannerButton onClick={() => toggle(false)} busy={busy} icon={Sparkles}>
           {t("resume")}
         </BannerButton>
       </Banner>
@@ -162,9 +167,11 @@ export function AiThreadBanner({
   // Active on this thread.
   return (
     <Banner tone="primary">
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
-        <span className="truncate font-medium text-foreground">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <span className="truncate font-semibold text-primary">
           {t("activeText")}
         </span>
       </div>
@@ -185,10 +192,10 @@ function Banner({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 border-b px-3 py-2 text-xs sm:px-4",
+        "flex flex-wrap items-center justify-between gap-3 border-y px-4 py-3 text-sm shadow-sm transition-all duration-300",
         tone === "primary"
-          ? "border-primary/20 bg-primary/5"
-          : "border-border bg-muted/40",
+          ? "border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent"
+          : "border-border bg-gradient-to-r from-muted/50 via-muted/30 to-transparent",
       )}
     >
       {children}
@@ -212,12 +219,12 @@ function BannerButton({
       type="button"
       onClick={onClick}
       disabled={busy}
-      className="inline-flex flex-shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
+      className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-muted hover:shadow disabled:opacity-50"
     >
       {busy ? (
-        <Loader2 className="h-3 w-3 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <Icon className="h-3 w-3" />
+        <Icon className="h-4 w-4" />
       )}
       {children}
     </button>
