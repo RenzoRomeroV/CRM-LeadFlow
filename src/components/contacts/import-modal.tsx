@@ -36,6 +36,11 @@ import {
   Tag,
   FileText,
   Loader2,
+  Phone,
+  User,
+  Mail,
+  Building2,
+  Hash,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useTranslations } from 'next-intl';
@@ -507,24 +512,39 @@ export function ImportModal({
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[32rem] text-xs">
                     <thead>
-                      <tr className="border-b border-border bg-background/60">
-                        <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                          {t('columns.phone')}
+                      <tr className="border-b border-blue-200 bg-blue-50/80">
+                        <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-blue-900">
+                          <div className="flex items-center gap-1.5">
+                            <Hash className="h-3.5 w-3.5" /> N°
+                          </div>
                         </th>
-                        <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                          {t('columns.name')}
+                        <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-blue-900">
+                          <div className="flex items-center gap-1.5">
+                            <Phone className="h-3.5 w-3.5" /> {t('columns.phone')}
+                          </div>
                         </th>
-                        <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                          {t('columns.email')}
+                        <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-blue-900">
+                          <div className="flex items-center gap-1.5">
+                            <User className="h-3.5 w-3.5" /> {t('columns.name')}
+                          </div>
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-blue-900">
+                          <div className="flex items-center gap-1.5">
+                            <Mail className="h-3.5 w-3.5" /> {t('columns.email')}
+                          </div>
                         </th>
                         {previewHasCompany && (
-                          <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                            {t('columns.company')}
+                          <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-blue-900">
+                            <div className="flex items-center gap-1.5">
+                              <Building2 className="h-3.5 w-3.5" /> {t('columns.company')}
+                            </div>
                           </th>
                         )}
                         {previewHasTags && (
-                          <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                            {t('columns.tags')}
+                          <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-blue-900">
+                            <div className="flex items-center gap-1.5">
+                              <Tag className="h-3.5 w-3.5" /> {t('columns.tags')}
+                            </div>
                           </th>
                         )}
                       </tr>
@@ -535,6 +555,9 @@ export function ImportModal({
                           key={i}
                           className="bg-popover/40 transition-colors hover:bg-muted/30"
                         >
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground font-medium text-[10px]">
+                            {i + 1}
+                          </td>
                           <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                             <PreviewCell
                               value={row.phone}
