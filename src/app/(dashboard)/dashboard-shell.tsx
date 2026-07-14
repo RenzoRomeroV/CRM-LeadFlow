@@ -20,6 +20,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const toggleCollapse = useCallback(() => setIsCollapsed((prev) => !prev), []);
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
@@ -44,7 +47,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       {/* Reports this tab's online/away presence once we know a user is
           signed in. Headless — renders nothing. */}
       <PresenceHeartbeat />
-      <Sidebar open={sidebarOpen} onClose={closeSidebar} />
+      <Sidebar 
+        open={sidebarOpen} 
+        onClose={closeSidebar} 
+        isCollapsed={isCollapsed} 
+        onToggleCollapse={toggleCollapse} 
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onOpenSidebar={() => setSidebarOpen(true)} />
         {/* Thinner horizontal padding on mobile so cards have room to breathe. */}

@@ -22,8 +22,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "LeadFlow Solmit",
+    template: "%s — LeadFlow Solmit",
   },
   description: "Self-hostable CRM template for WhatsApp.",
   robots: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     follow: false,
   },
   icons: {
-    icon: [{ url: "/icon" }],
+    icon: [{ url: "/images/Solmit1.png" }],
   },
   formatDetection: {
     email: false,
