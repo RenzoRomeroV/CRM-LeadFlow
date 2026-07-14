@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SettingsPanelHead } from './settings-panel-head';
 import { AiKnowledgeCard } from './ai-knowledge';
 import { AI_PROVIDER_DEFAULT_MODEL } from '@/lib/ai/defaults';
@@ -257,8 +258,15 @@ export function AiConfig() {
       )}
 
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
+        <Tabs defaultValue="connection" className="w-full">
+          <TabsList className="mb-6 grid w-[400px] grid-cols-2">
+            <TabsTrigger value="connection">Ajustes Técnicos</TabsTrigger>
+            <TabsTrigger value="behaviour">Personalización</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="connection" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Sparkles className="h-4 w-4 text-primary" /> {t('providerAndKey')}
             </CardTitle>
@@ -384,6 +392,18 @@ export function AiConfig() {
           </CardContent>
         </Card>
 
+        <AiKnowledgeCard
+          accountId={accountId}
+          canEdit={canEdit}
+          hasEmbeddingsKey={
+            embeddingsKeyEdited
+              ? embeddingsKey.trim().length > 0
+              : hasStoredEmbeddingsKey
+          }
+        />
+        </TabsContent>
+
+        <TabsContent value="behaviour" className="space-y-6 mt-0">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t('behaviour')}</CardTitle>
@@ -488,16 +508,8 @@ export function AiConfig() {
             </div>
           </CardContent>
         </Card>
-
-        <AiKnowledgeCard
-          accountId={accountId}
-          canEdit={canEdit}
-          hasEmbeddingsKey={
-            embeddingsKeyEdited
-              ? embeddingsKey.trim().length > 0
-              : hasStoredEmbeddingsKey
-          }
-        />
+        </TabsContent>
+        </Tabs>
 
         <div className="flex items-center justify-between">
           {configured ? (
