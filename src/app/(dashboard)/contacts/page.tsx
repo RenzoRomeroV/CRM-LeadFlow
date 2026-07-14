@@ -637,7 +637,7 @@ export default function ContactsPage() {
                     />
                   </TableCell>
                   <TableCell className="text-muted-foreground font-medium text-[10px]">
-                    {(page - 1) * 20 + i + 1}
+                    {page * 20 + i + 1}
                   </TableCell>
                   <TableCell className="text-foreground font-medium">
                     {contact.name || <span className="text-muted-foreground italic">{t('unnamed')}</span>}
