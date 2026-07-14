@@ -49,6 +49,13 @@ import {
   SlidersHorizontal,
   Filter,
   X,
+  Phone,
+  User,
+  Mail,
+  Building2,
+  Tag,
+  Calendar,
+  Hash,
 } from 'lucide-react';
 import { ContactForm } from '@/components/contacts/contact-form';
 import { ContactDetailView } from '@/components/contacts/contact-detail-view';
@@ -531,7 +538,7 @@ export default function ContactsPage() {
       <div className="rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-border hover:bg-transparent">
+            <TableRow className="border-blue-200 bg-blue-50/80 hover:bg-blue-50/80">
               <TableHead className="w-10">
                 <Checkbox
                   checked={allOnPageSelected}
@@ -541,19 +548,48 @@ export default function ContactsPage() {
                   aria-label="Select all contacts on this page"
                 />
               </TableHead>
-              <TableHead className="text-muted-foreground">{t('tableColumns.name')}</TableHead>
-              <TableHead className="text-muted-foreground">{t('tableColumns.phone')}</TableHead>
-              <TableHead className="text-muted-foreground hidden md:table-cell">{t('tableColumns.email')}</TableHead>
-              <TableHead className="text-muted-foreground hidden lg:table-cell">{t('tableColumns.company')}</TableHead>
-              <TableHead className="text-muted-foreground hidden md:table-cell">{t('tableColumns.tags')}</TableHead>
-              <TableHead className="text-muted-foreground hidden lg:table-cell">{t('tableColumns.createdAt')}</TableHead>
-              <TableHead className="text-muted-foreground w-12" />
+              <TableHead className="text-blue-900 font-medium">
+                <div className="flex items-center gap-1.5">
+                  <Hash className="h-3.5 w-3.5" /> N°
+                </div>
+              </TableHead>
+              <TableHead className="text-blue-900 font-medium">
+                <div className="flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5" /> {t('tableColumns.name')}
+                </div>
+              </TableHead>
+              <TableHead className="text-blue-900 font-medium">
+                <div className="flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5" /> {t('tableColumns.phone')}
+                </div>
+              </TableHead>
+              <TableHead className="text-blue-900 font-medium hidden md:table-cell">
+                <div className="flex items-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5" /> {t('tableColumns.email')}
+                </div>
+              </TableHead>
+              <TableHead className="text-blue-900 font-medium hidden lg:table-cell">
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5" /> {t('tableColumns.company')}
+                </div>
+              </TableHead>
+              <TableHead className="text-blue-900 font-medium hidden md:table-cell">
+                <div className="flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5" /> {t('tableColumns.tags')}
+                </div>
+              </TableHead>
+              <TableHead className="text-blue-900 font-medium hidden lg:table-cell">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" /> {t('tableColumns.createdAt')}
+                </div>
+              </TableHead>
+              <TableHead className="text-blue-900 w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow className="border-border">
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={9} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="size-6 animate-spin text-primary" />
                     <p className="text-sm text-muted-foreground">{t('loading')}</p>
@@ -562,7 +598,7 @@ export default function ContactsPage() {
               </TableRow>
             ) : contacts.length === 0 ? (
               <TableRow className="border-border">
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={9} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <Users className="size-8 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
@@ -587,7 +623,7 @@ export default function ContactsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              contacts.map((contact) => (
+              contacts.map((contact, i) => (
                 <TableRow
                   key={contact.id}
                   className="border-border hover:bg-muted/50 cursor-pointer"
@@ -599,6 +635,9 @@ export default function ContactsPage() {
                       onCheckedChange={() => toggleSelect(contact.id)}
                       aria-label={`Select ${contact.name || contact.phone}`}
                     />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground font-medium text-[10px]">
+                    {(page - 1) * 20 + i + 1}
                   </TableCell>
                   <TableCell className="text-foreground font-medium">
                     {contact.name || <span className="text-muted-foreground italic">{t('unnamed')}</span>}
