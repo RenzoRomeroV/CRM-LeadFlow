@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid code format' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
