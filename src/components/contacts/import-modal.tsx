@@ -29,14 +29,15 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
+  AlertTriangle,
+  CheckCircle,
   Upload,
+  XCircle,
+  Tag,
   FileText,
   Loader2,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Tag,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useTranslations } from 'next-intl';
 
 const DEFAULT_TAG_COLOR = '#3b82f6';
@@ -168,7 +169,17 @@ export function ImportModal({
     setFile(selected);
     setResult(null);
 
-    const text = await selected.text();
+    let text = '';
+    if (selected.name.toLowerCase().endsWith('.xlsx') || selected.name.toLowerCase().endsWith('.xls')) {
+      const arrayBuffer = await selected.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      text = XLSX.utils.sheet_to_csv(worksheet);
+    } else {
+      text = await selected.text();
+    }
+
     const {
       rows,
       hasTagsColumn: csvHasTags,
@@ -450,7 +461,7 @@ export function ImportModal({
                   {t('uploadDropzone')}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  {t('uploadHint')}
+                  .xlsx, .xls o .csv hasta el límite de tu navegador
                 </p>
               </>
             )}
@@ -458,18 +469,18 @@ export function ImportModal({
 
           <div className="mt-4 text-center">
             <a 
-              href="/plantilla-contactos.csv" 
+              href="/plantilla-contactos.xlsx" 
               download 
               className="text-sm font-medium text-primary hover:underline"
             >
-              📥 Descargar plantilla de ejemplo
+              📥 Descargar plantilla Excel de ejemplo
             </a>
           </div>
 
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xls,application/vnd.ms-excel"
             onChange={handleFileChange}
             className="hidden"
           />
