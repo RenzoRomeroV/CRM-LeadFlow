@@ -456,6 +456,16 @@ export function ImportModal({
             )}
           </div>
 
+          <div className="mt-4 text-center">
+            <a 
+              href="/plantilla-contactos.csv" 
+              download 
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              📥 Descargar plantilla de ejemplo
+            </a>
+          </div>
+
           <input
             ref={fileInputRef}
             type="file"
