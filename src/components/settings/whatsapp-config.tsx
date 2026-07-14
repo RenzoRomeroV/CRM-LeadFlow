@@ -793,10 +793,10 @@ export function WhatsAppConfig() {
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
                   <ol className="list-decimal list-inside space-y-1 text-sm">
-                    <li>{t('step3_1')}</li>
-                    <li dangerouslySetInnerHTML={{ __html: t('step3_2') }} />
-                    <li dangerouslySetInnerHTML={{ __html: t('step3_3') }} />
-                    <li dangerouslySetInnerHTML={{ __html: t('step3_4') }} />
+                    <li>{t.rich('step3_1')}</li>
+                    <li>{t.rich('step3_2', { highlight: (chunks) => <strong className="text-foreground">{chunks}</strong> })}</li>
+                    <li>{t.rich('step3_3', { highlight: (chunks) => <strong className="text-foreground">{chunks}</strong> })}</li>
+                    <li>{t.rich('step3_4', { highlight: (chunks) => <strong className="text-foreground">{chunks}</strong> })}</li>
                   </ol>
                 </AccordionContent>
               </AccordionItem>
@@ -810,11 +810,11 @@ export function WhatsAppConfig() {
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
                   <ol className="list-decimal list-inside space-y-1 text-sm">
-                    <li>{t('step4_1')}</li>
-                    <li>{t('step4_2')}</li>
-                    <li dangerouslySetInnerHTML={{ __html: t('step4_3') }} />
-                    <li dangerouslySetInnerHTML={{ __html: t('step4_4') }} />
-                    <li>{t('step4_5')}</li>
+                    <li>{t.rich('step4_1')}</li>
+                    <li>{t.rich('step4_2')}</li>
+                    <li>{t.rich('step4_3', { highlight: (chunks) => <strong className="text-foreground">{chunks}</strong> })}</li>
+                    <li>{t.rich('step4_4', { highlight: (chunks) => <strong className="text-foreground">{chunks}</strong> })}</li>
+                    <li>{t.rich('step4_5')}</li>
                   </ol>
                 </AccordionContent>
               </AccordionItem>
