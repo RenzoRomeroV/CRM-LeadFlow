@@ -52,7 +52,7 @@ export function validateTemplateName(name: string): void {
   if (!name) throw new Error('Template name is required.');
   if (!TEMPLATE_LIMITS.nameRegex.test(name)) {
     throw new Error(
-      'Template name must use only lowercase letters, digits, and underscores (1-512 chars).',
+      'El nombre de la plantilla solo debe usar letras minúsculas, números y guiones bajos (1-512 caracteres).',
     );
   }
 }
