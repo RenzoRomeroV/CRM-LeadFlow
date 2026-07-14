@@ -53,7 +53,7 @@ import {
   User,
   Mail,
   Building2,
-  Tag,
+  Tag as TagIcon,
   Calendar,
   Hash,
 } from 'lucide-react';
@@ -575,7 +575,7 @@ export default function ContactsPage() {
               </TableHead>
               <TableHead className="text-blue-900 font-medium hidden md:table-cell">
                 <div className="flex items-center gap-1.5">
-                  <Tag className="h-3.5 w-3.5" /> {t('tableColumns.tags')}
+                      <TagIcon className="h-4 w-4 mr-2" /> {t('tableColumns.tags')}
                 </div>
               </TableHead>
               <TableHead className="text-blue-900 font-medium hidden lg:table-cell">

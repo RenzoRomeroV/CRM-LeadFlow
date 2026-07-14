@@ -126,12 +126,12 @@ export function QuickRepliesManager() {
   return (
     <div>
       <SettingsPanelHead
-        title="Quick replies"
-        description="Reusable snippets — plain text or a saved interactive message — that agents can insert from the inbox composer."
+        title="Respuestas rápidas"
+        description="Fragmentos reutilizables —texto sin formato o un mensaje interactivo guardado— que los agentes pueden insertar desde el editor de la bandeja de entrada."
         action={
           <Button onClick={openCreate}>
             <Plus className="mr-1 h-4 w-4" />
-            New quick reply
+            Nueva respuesta rápida
           </Button>
         }
       />
@@ -142,7 +142,7 @@ export function QuickRepliesManager() {
         </div>
       ) : items.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
-          No quick replies yet. Create one to reuse it across conversations.
+          Aún no hay respuestas rápidas. Crea una para reutilizarla en todas las conversaciones.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
