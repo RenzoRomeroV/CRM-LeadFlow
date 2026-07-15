@@ -106,10 +106,24 @@ export async function dispatchInboundToAiReply(
       latestUserMessage(messages),
     )
 
+    const { data: paymentMethods } = await db
+      .from('ai_payment_methods')
+      .select('type, bank_name, account_number, cci, holder_name')
+      .eq('account_id', accountId)
+
+    const { data: acct } = await db
+      .from('accounts')
+      .select('default_currency')
+      .eq('id', accountId)
+      .maybeSingle()
+
     const systemPrompt = buildSystemPrompt({
       userPrompt: config.systemPrompt,
       mode: 'auto_reply',
       knowledge,
+      config,
+      paymentMethods: paymentMethods || [],
+      currency: acct?.default_currency,
     })
 
     const { text, handoff, usage } = await generateReply({

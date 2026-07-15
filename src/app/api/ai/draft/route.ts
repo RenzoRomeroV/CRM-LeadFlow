@@ -98,10 +98,24 @@ export async function POST(request: Request) {
       latestUserMessage(messages),
     )
 
+    const { data: paymentMethods } = await supabase
+      .from('ai_payment_methods')
+      .select('type, bank_name, account_number, cci, holder_name')
+      .eq('account_id', accountId)
+
+    const { data: acct } = await supabase
+      .from('accounts')
+      .select('default_currency')
+      .eq('id', accountId)
+      .maybeSingle()
+
     const systemPrompt = buildSystemPrompt({
       userPrompt: config.systemPrompt,
       mode: 'draft',
       knowledge,
+      config,
+      paymentMethods: paymentMethods || [],
+      currency: acct?.default_currency,
     })
 
     const { text, usage } = await generateReply({ config, systemPrompt, messages })

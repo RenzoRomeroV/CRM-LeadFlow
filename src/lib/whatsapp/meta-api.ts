@@ -1042,3 +1042,74 @@ export async function downloadMedia(
   const buffer = Buffer.from(await response.arrayBuffer())
   return { buffer, contentType }
 }
+
+// ============================================================
+// Business Profile
+// ============================================================
+
+export interface GetWhatsAppBusinessProfileArgs {
+  phoneNumberId: string
+  accessToken: string
+}
+
+export interface WhatsAppBusinessProfile {
+  about: string
+  address: string
+  description: string
+  email: string
+  profile_picture_url: string
+  websites: string[]
+  vertical: string
+  messaging_product: 'whatsapp'
+}
+
+export async function getWhatsAppBusinessProfile(
+  args: GetWhatsAppBusinessProfileArgs
+): Promise<WhatsAppBusinessProfile> {
+  const { phoneNumberId, accessToken } = args
+  const url = `${META_API_BASE}/${phoneNumberId}/whatsapp_business_profile?fields=about,address,description,email,profile_picture_url,websites,vertical`
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) {
+    await throwMetaError(response, `Failed to fetch business profile: ${response.status}`)
+  }
+  const data = await response.json()
+  return data.data[0] as WhatsAppBusinessProfile
+}
+
+export interface UpdateWhatsAppBusinessProfileArgs {
+  phoneNumberId: string
+  accessToken: string
+  payload: {
+    about?: string
+    address?: string
+    description?: string
+    email?: string
+    websites?: string[]
+    vertical?: string
+    profile_picture_handle?: string
+  }
+}
+
+export async function updateWhatsAppBusinessProfile(
+  args: UpdateWhatsAppBusinessProfileArgs
+): Promise<void> {
+  const { phoneNumberId, accessToken, payload } = args
+  const url = `${META_API_BASE}/${phoneNumberId}/whatsapp_business_profile`
+  const body = {
+    messaging_product: 'whatsapp',
+    ...payload,
+  }
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    await throwMetaError(response, `Failed to update business profile: ${response.status}`)
+  }
+}

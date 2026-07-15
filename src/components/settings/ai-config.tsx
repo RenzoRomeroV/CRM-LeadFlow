@@ -71,7 +71,6 @@ export function AiConfig() {
   const [embeddingsKey, setEmbeddingsKey] = useState('');
   const [embeddingsKeyEdited, setEmbeddingsKeyEdited] = useState(false);
   const [hasStoredEmbeddingsKey, setHasStoredEmbeddingsKey] = useState(false);
-  const [systemPrompt, setSystemPrompt] = useState('');
   const [isActive, setIsActive] = useState(false);
   const [autoReplyEnabled, setAutoReplyEnabled] = useState(false);
   const [maxPerConversation, setMaxPerConversation] = useState(3);
@@ -98,7 +97,6 @@ export function AiConfig() {
         setConfigured(true);
         setProvider(data.provider);
         setModel(data.model);
-        setSystemPrompt(data.system_prompt ?? '');
         setIsActive(data.is_active);
         setAutoReplyEnabled(data.auto_reply_enabled);
         setMaxPerConversation(data.auto_reply_max_per_conversation ?? 3);
@@ -149,7 +147,6 @@ export function AiConfig() {
     model: model.trim(),
     api_key: keyPayload(),
     embeddings_api_key: embeddingsKeyPayload(),
-    system_prompt: systemPrompt.trim() || null,
     is_active: isActive,
     auto_reply_enabled: autoReplyEnabled,
     auto_reply_max_per_conversation: maxPerConversation,
@@ -220,7 +217,6 @@ export function AiConfig() {
         setKeyEdited(false);
         setIsActive(false);
         setAutoReplyEnabled(false);
-        setSystemPrompt('');
         setHandoffAgentId('');
       } else {
         const data = await res.json();
@@ -258,13 +254,6 @@ export function AiConfig() {
       )}
 
       <div className="space-y-6">
-        <Tabs defaultValue="connection" className="w-full">
-          <TabsList className="mb-6 grid w-[400px] grid-cols-2">
-            <TabsTrigger value="connection">Ajustes Técnicos</TabsTrigger>
-            <TabsTrigger value="behaviour">Personalización</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="connection" className="space-y-6 mt-0">
             <Card>
               <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -401,9 +390,6 @@ export function AiConfig() {
               : hasStoredEmbeddingsKey
           }
         />
-        </TabsContent>
-
-        <TabsContent value="behaviour" className="space-y-6 mt-0">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t('behaviour')}</CardTitle>
@@ -412,17 +398,6 @@ export function AiConfig() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="ai-prompt">{t('businessContext')}</Label>
-              <Textarea
-                id="ai-prompt"
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                placeholder={t('promptPlaceholder')}
-                rows={5}
-                disabled={disabled}
-              />
-            </div>
 
             <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
               <div>
@@ -508,8 +483,6 @@ export function AiConfig() {
             </div>
           </CardContent>
         </Card>
-        </TabsContent>
-        </Tabs>
 
         <div className="flex items-center justify-between">
           {configured ? (

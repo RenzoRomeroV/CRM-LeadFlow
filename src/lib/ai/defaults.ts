@@ -1,4 +1,4 @@
-import type { AiProvider } from './types'
+import type { AiProvider, AiConfig } from './types'
 
 // ============================================================
 // Tunables + prompt scaffold for the AI reply assistant.
@@ -55,15 +55,24 @@ export function buildSystemPrompt(args: {
   mode: 'draft' | 'auto_reply'
   /** Knowledge-base excerpts retrieved for the current question. */
   knowledge?: string[]
+  config?: AiConfig
+  paymentMethods?: any[]
+  currency?: string | null
 }): string {
-  const { userPrompt, mode, knowledge } = args
+  const { userPrompt, mode, knowledge, config, paymentMethods, currency } = args
   const parts: string[] = [
     'You are a customer-messaging assistant for a business that uses a WhatsApp CRM. ' +
       'You are shown the recent WhatsApp conversation between the business (assistant) and a customer (user). ' +
       'Write the next reply the business should send to the customer.',
     'Guidelines: reply in the same language the customer is writing in; keep it concise and friendly, suitable for WhatsApp; ' +
-      'never invent facts, prices, order numbers, availability, or promises that are not supported by the conversation or the business context below; ' +
       'output only the message text — no quotes, no "Reply:" label, no preamble.',
+    'STRICT ANTI-HALLUCINATION RULES: ' +
+      '1. NEVER invent, guess, or hallucinate facts, products, prices, currencies, order numbers, or availability. ' +
+      '2. You can ONLY offer products, services, and prices that are EXPLICITLY listed in the "Business Profile and Rules" or "Knowledge base" sections below. ' +
+      '3. If a customer asks for a product, service, or price that is NOT listed in your context, you MUST politely inform them that you do not offer it or do not have that information at the moment. ' +
+      `4. DO NOT assume currencies (e.g., do not use COP, MXN, USD unless explicitly stated). ${
+        currency ? `The business uses the currency: ${currency}. YOU MUST ALWAYS use ${currency} when mentioning prices, never invent another currency.` : ''
+      }`,
     'Personality & Formatting Rules: ' +
       '1. Tone: Be EXTREMELY empathetic, warm, cheerful, and conversational. Make the customer feel genuinely valued. Talk like a friendly human, not a robot. ' +
       '2. Emojis: You MUST use emojis generously in EVERY single message. Use emojis to express emotions (😊, 🙌, ✨). ' +
@@ -78,8 +87,33 @@ export function buildSystemPrompt(args: {
     )
   }
 
+  if (config) {
+    const profileParts = []
+    if (config.companyName) profileParts.push(`Nombre de la Empresa: ${config.companyName}`)
+    if (config.companyRuc) profileParts.push(`RUC / ID Fiscal: ${config.companyRuc}`)
+    if (config.companyLocation) profileParts.push(`Ubicación (Ciudad/País): ${config.companyLocation}`)
+    if (config.companyAddress) profileParts.push(`Dirección Física: ${config.companyAddress}`)
+    if (config.companyDescription) profileParts.push(`Descripción y Reglas:\n${config.companyDescription}`)
+    
+    if (profileParts.length > 0) {
+      parts.push(`Business Profile and Rules:\n${profileParts.join('\n')}`)
+    }
+  }
+
   if (userPrompt && userPrompt.trim()) {
-    parts.push(`Business context and instructions:\n${userPrompt.trim()}`)
+    parts.push(`Additional Business context:\n${userPrompt.trim()}`)
+  }
+
+  if (paymentMethods && paymentMethods.length > 0) {
+    const pmText = paymentMethods.map(pm => {
+      let txt = `- ${pm.type === 'bank_transfer' ? 'Transferencia Bancaria' : pm.type === 'yape' ? 'Yape' : 'Plin'}`
+      if (pm.bank_name) txt += ` (${pm.bank_name})`
+      txt += `: Nro ${pm.account_number}`
+      if (pm.cci) txt += `, CCI: ${pm.cci}`
+      txt += ` a nombre de ${pm.holder_name}`
+      return txt
+    }).join('\n')
+    parts.push(`Available Payment Methods for closing sales:\n${pmText}\n\nNote: For Yape or Plin, you can mention we have a QR code available.`)
   }
 
   if (knowledge && knowledge.length > 0) {

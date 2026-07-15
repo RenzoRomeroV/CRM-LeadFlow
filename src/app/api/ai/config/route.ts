@@ -30,7 +30,7 @@ export async function GET() {
       // `api_key` is selected only to derive `has_key` — it is stripped
       // out below and never returned to the client.
       .select(
-        'provider, model, system_prompt, is_active, auto_reply_enabled, auto_reply_max_per_conversation, handoff_agent_id, api_key, embeddings_api_key',
+        'provider, model, system_prompt, is_active, auto_reply_enabled, auto_reply_max_per_conversation, handoff_agent_id, api_key, embeddings_api_key, company_name, company_ruc, company_location, company_address, company_description',
       )
       .eq('account_id', accountId)
       .maybeSingle()
@@ -77,12 +77,12 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null)
     if (!body || typeof body !== 'object') return bad('Invalid request body')
 
-    const provider = body.provider as AiProvider
-    if (provider !== 'openai' && provider !== 'anthropic' && provider !== 'groq') {
+    const provider = body.provider as AiProvider | undefined
+    if ('provider' in body && provider !== 'openai' && provider !== 'anthropic' && provider !== 'groq') {
       return bad('provider must be "openai", "anthropic", or "groq"')
     }
     const model = typeof body.model === 'string' ? body.model.trim() : ''
-    if (!model) return bad('model is required')
+    if ('model' in body && !model) return bad('model is required')
 
     const systemPrompt =
       typeof body.system_prompt === 'string' && body.system_prompt.trim()
@@ -114,6 +114,12 @@ export async function POST(request: Request) {
       handoffAgentId = rawHandoff
     }
 
+    const companyName = typeof body.company_name === 'string' ? body.company_name.trim() : null
+    const companyRuc = typeof body.company_ruc === 'string' ? body.company_ruc.trim() : null
+    const companyLocation = typeof body.company_location === 'string' ? body.company_location.trim() : null
+    const companyAddress = typeof body.company_address === 'string' ? body.company_address.trim() : null
+    const companyDescription = typeof body.company_description === 'string' ? body.company_description.trim() : null
+
     const rawKey = typeof body.api_key === 'string' ? body.api_key.trim() : ''
 
     // Embeddings key (optional, for semantic KB search): a non-empty
@@ -125,12 +131,26 @@ export async function POST(request: Request) {
         : ''
     const clearEmbeddingsKey = body.embeddings_api_key === null
 
-    // Reuse the stored key when the form didn't send a fresh one.
+    // Reuse the stored config when the form didn't send a fresh one.
     const { data: existing } = await supabase
       .from('ai_configs')
-      .select('id, provider, model, api_key')
+      .select('*')
       .eq('account_id', accountId)
       .maybeSingle()
+
+    // Determine values to use: favor incoming body, fallback to existing, then defaults
+    const finalProvider = ('provider' in body ? provider : existing?.provider) || 'openai'
+    const finalModel = 'model' in body ? model : (existing?.model || '')
+    const finalSystemPrompt = 'system_prompt' in body ? systemPrompt : existing?.system_prompt
+    const finalIsActive = 'is_active' in body ? isActive : !!existing?.is_active
+    const finalAutoReplyEnabled = 'auto_reply_enabled' in body ? autoReplyEnabled : !!existing?.auto_reply_enabled
+    const finalMaxPer = 'auto_reply_max_per_conversation' in body ? maxPer : (existing?.auto_reply_max_per_conversation ?? 3)
+    
+    const finalCompanyName = 'company_name' in body ? companyName : existing?.company_name
+    const finalCompanyRuc = 'company_ruc' in body ? companyRuc : existing?.company_ruc
+    const finalCompanyLocation = 'company_location' in body ? companyLocation : existing?.company_location
+    const finalCompanyAddress = 'company_address' in body ? companyAddress : existing?.company_address
+    const finalCompanyDescription = 'company_description' in body ? companyDescription : existing?.company_description
 
     let apiKeyPlain: string
     if (rawKey) {
@@ -152,19 +172,24 @@ export async function POST(request: Request) {
     const credentialsChanged =
       !existing ||
       rawKey !== '' ||
-      provider !== existing.provider ||
-      model !== existing.model
+      finalProvider !== existing.provider ||
+      finalModel !== existing.model
 
     if (credentialsChanged) {
       try {
         await validateAiCredentials({
-          provider,
-          model,
+          provider: finalProvider,
+          model: finalModel,
           apiKey: apiKeyPlain,
-          systemPrompt,
-          isActive,
-          autoReplyEnabled,
-          autoReplyMaxPerConversation: maxPer,
+          systemPrompt: finalSystemPrompt,
+          companyName: finalCompanyName,
+          companyRuc: finalCompanyRuc,
+          companyLocation: finalCompanyLocation,
+          companyAddress: finalCompanyAddress,
+          companyDescription: finalCompanyDescription,
+          isActive: finalIsActive,
+          autoReplyEnabled: finalAutoReplyEnabled,
+          autoReplyMaxPerConversation: finalMaxPer,
           handoffAgentId: null,
           embeddingsApiKey: null,
         })
@@ -198,14 +223,19 @@ export async function POST(request: Request) {
     }
 
     const encryptedKey = rawKey ? encrypt(rawKey) : null
-    const shared: Record<string, unknown> = {
-      provider,
-      model,
-      system_prompt: systemPrompt,
-      is_active: isActive,
-      auto_reply_enabled: autoReplyEnabled,
-      auto_reply_max_per_conversation: maxPer,
-    }
+    const shared: Record<string, unknown> = {}
+
+    if ('provider' in body) shared.provider = finalProvider
+    if ('model' in body) shared.model = finalModel
+    if ('system_prompt' in body) shared.system_prompt = finalSystemPrompt
+    if ('is_active' in body) shared.is_active = finalIsActive
+    if ('auto_reply_enabled' in body) shared.auto_reply_enabled = finalAutoReplyEnabled
+    if ('auto_reply_max_per_conversation' in body) shared.auto_reply_max_per_conversation = finalMaxPer
+    if ('company_name' in body) shared.company_name = finalCompanyName
+    if ('company_ruc' in body) shared.company_ruc = finalCompanyRuc
+    if ('company_location' in body) shared.company_location = finalCompanyLocation
+    if ('company_address' in body) shared.company_address = finalCompanyAddress
+    if ('company_description' in body) shared.company_description = finalCompanyDescription
     // Only touch the handoff target when the form actually sent the field,
     // so a partial save (e.g. flipping a toggle) doesn't wipe it.
     if (handoffProvided) shared.handoff_agent_id = handoffAgentId

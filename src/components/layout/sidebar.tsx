@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
@@ -26,6 +26,9 @@ import {
   Workflow,
   X,
   Zap,
+  ChevronDown,
+  SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -88,6 +91,7 @@ interface NavItem {
    * Purely informational — doesn't affect routing or access.
    */
   beta?: boolean;
+  subItems?: { href: string; labelKey: string; icon?: React.ElementType }[];
 }
 
 const navItems: NavItem[] = [
@@ -99,7 +103,15 @@ const navItems: NavItem[] = [
   { href: "/broadcasts", labelKey: "broadcasts", icon: Radio },
   { href: "/automations", labelKey: "automations", icon: Zap },
   { href: "/flows", labelKey: "flows", icon: Workflow, beta: true },
-  { href: "/agents", labelKey: "aiAgents", icon: Bot },
+  { 
+    href: "/agents", 
+    labelKey: "aiAgents", 
+    icon: Bot,
+    subItems: [
+      { href: "/agents/config", labelKey: "aiConfig", icon: SlidersHorizontal },
+      { href: "/agents/personalize", labelKey: "aiPersonalize", icon: Sparkles }
+    ]
+  },
 ];
 
 const bottomNavItems = [
@@ -122,6 +134,13 @@ export function Sidebar({ open = false, onClose, isCollapsed = false, onToggleCo
   const { profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    "/agents": pathname?.startsWith("/agents") || false,
+  });
+
+  const toggleMenu = (href: string) => {
+    setOpenMenus((prev) => ({ ...prev, [href]: !prev[href] }));
+  };
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -232,6 +251,51 @@ export function Sidebar({ open = false, onClose, isCollapsed = false, onToggleCo
               // viewing this section".
               const showNotificationBadge =
                 item.href === "/notifications" && unreadNotifications > 0;
+
+              if (item.subItems) {
+                const isMenuOpen = openMenus[item.href];
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <li key={item.href}>
+                    <button
+                      onClick={() => toggleMenu(item.href)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                        isActive ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span className={cn("whitespace-nowrap", isCollapsed && "lg:hidden")}>{t(item.labelKey as string)}</span>
+                      </div>
+                      {!isCollapsed && (
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", isMenuOpen && "rotate-180")} />
+                      )}
+                    </button>
+                    {isMenuOpen && !isCollapsed && (
+                      <ul className="mt-1 flex flex-col gap-1 pl-9">
+                        {item.subItems.map((sub) => {
+                          const isSubActive = pathname === sub.href;
+                          return (
+                            <li key={sub.href}>
+                              <Link
+                                href={sub.href}
+                                className={cn(
+                                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                                  isSubActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                              >
+                                {sub.icon && <sub.icon className="h-4 w-4 shrink-0" />}
+                                {t(sub.labelKey)}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
 
               return (
                 <li key={item.href}>

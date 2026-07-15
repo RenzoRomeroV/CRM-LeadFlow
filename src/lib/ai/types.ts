@@ -18,6 +18,11 @@ export interface AiConfig {
   model: string
   apiKey: string
   systemPrompt: string | null
+  companyName: string | null
+  companyRuc: string | null
+  companyLocation: string | null
+  companyAddress: string | null
+  companyDescription: string | null
   isActive: boolean
   autoReplyEnabled: boolean
   autoReplyMaxPerConversation: number
