@@ -7,7 +7,7 @@ import { buildSystemPrompt } from './defaults'
 import { buildHandoffSummary } from './handoff'
 import { logAiUsage } from './usage'
 import { latestUserMessage } from './query'
-import { engineSendText } from '@/lib/flows/meta-send'
+import { engineSendText, engineSendMedia } from '@/lib/flows/meta-send'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 interface DispatchArgs {
@@ -108,7 +108,7 @@ export async function dispatchInboundToAiReply(
 
     const { data: paymentMethods } = await db
       .from('ai_payment_methods')
-      .select('type, bank_name, account_number, cci, holder_name')
+      .select('type, bank_name, account_number, cci, holder_name, qr_image_url')
       .eq('account_id', accountId)
 
     const { data: acct } = await db
@@ -193,14 +193,47 @@ export async function dispatchInboundToAiReply(
     }
     if (claimed !== true) return // lost the per-conversation cap race
 
-    await engineSendText({
-      accountId,
-      userId: configOwnerUserId,
-      conversationId,
-      contactId,
-      text,
-      aiGenerated: true,
-    })
+    let finalText = text
+    let sendQrType: string | null = null
+
+    // Look for [[SEND_QR:yape]] or [[SEND_QR:plin]]
+    const qrMatch = finalText.match(/\[\[SEND_QR:(yape|plin)\]\]/i)
+    if (qrMatch) {
+      sendQrType = qrMatch[1].toLowerCase()
+      // Remove the macro from the text that the user will see
+      finalText = finalText.replace(/\[\[SEND_QR:(?:yape|plin)\]\]/gi, '').trim()
+    }
+
+    let qrImageUrl: string | null = null
+    if (sendQrType && paymentMethods) {
+      const pm = paymentMethods.find(p => p.type === sendQrType)
+      if (pm?.qr_image_url) {
+        qrImageUrl = pm.qr_image_url
+      }
+    }
+
+    if (qrImageUrl) {
+      // Send as media with caption
+      await engineSendMedia({
+        accountId,
+        userId: configOwnerUserId,
+        conversationId,
+        contactId,
+        kind: 'image',
+        link: qrImageUrl,
+        caption: finalText,
+      })
+    } else {
+      // Send as text
+      await engineSendText({
+        accountId,
+        userId: configOwnerUserId,
+        conversationId,
+        contactId,
+        text: finalText,
+        aiGenerated: true,
+      })
+    }
   } catch (err) {
     console.error('[ai auto-reply] dispatch failed:', err)
   }

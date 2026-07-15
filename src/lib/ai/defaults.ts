@@ -113,7 +113,15 @@ export function buildSystemPrompt(args: {
       txt += ` a nombre de ${pm.holder_name}`
       return txt
     }).join('\n')
-    parts.push(`Available Payment Methods for closing sales:\n${pmText}\n\nNote: For Yape or Plin, you can mention we have a QR code available.`)
+    
+    // Si hay algún método con QR, agregamos la instrucción
+    const hasQr = paymentMethods.some(pm => pm.qr_image_url)
+    let extra = ''
+    if (hasQr) {
+      extra = '\n\nIMPORTANT: If the customer agrees to pay with Yape or Plin and you have a QR code available, YOU MUST include exactly the phrase "[[SEND_QR:yape]]" or "[[SEND_QR:plin]]" at the very end of your message. Do not include brackets around the text if you do not want to trigger the QR send.'
+    }
+    
+    parts.push(`Available Payment Methods for closing sales:\n${pmText}${extra}`)
   }
 
   if (knowledge && knowledge.length > 0) {
