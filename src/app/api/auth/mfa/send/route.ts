@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export async function POST(request: Request) {
   try {
@@ -10,15 +11,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // Generate a 6-digit random code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
 
     // Delete any existing codes for this user to prevent spam
-    await supabase.from('mfa_codes').delete().eq('user_id', user.id);
+    await supabaseAdmin.from('mfa_codes').delete().eq('user_id', user.id);
 
     // Insert new code
-    const { error: insertError } = await supabase.from('mfa_codes').insert({
+    const { error: insertError } = await supabaseAdmin.from('mfa_codes').insert({
       user_id: user.id,
       code,
       expires_at: expiresAt.toISOString(),

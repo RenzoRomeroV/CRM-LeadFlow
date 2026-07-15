@@ -83,9 +83,8 @@ function MFAPageInner() {
         throw new Error(data.error || "Código inválido");
       }
 
-      // Success! Redirect to dashboard
-      router.push("/dashboard");
-      router.refresh();
+      // Success! Force a hard redirect to dashboard to ensure cookies are sent cleanly
+      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message);
       setLoading(false);

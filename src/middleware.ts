@@ -74,13 +74,13 @@ export async function middleware(request: NextRequest) {
     const mfaVerified = request.cookies.get('mfa_verified')?.value === 'true'
     if (
       !mfaVerified && 
-      !request.nextUrl.pathname.startsWith('/auth/mfa') && 
+      !request.nextUrl.pathname.startsWith('/mfa') && 
       !request.nextUrl.pathname.startsWith('/api/auth/mfa') &&
       !request.nextUrl.pathname.startsWith('/login') &&
       !request.nextUrl.pathname.startsWith('/_next')
     ) {
       const url = request.nextUrl.clone()
-      url.pathname = '/auth/mfa'
+      url.pathname = '/mfa'
       url.search = ''
       return withRefreshedCookies(NextResponse.redirect(url))
     }
