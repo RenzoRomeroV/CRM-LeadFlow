@@ -688,14 +688,23 @@ async function processMessage(
   }
 
   // Update conversation
+  const updatePayload: Record<string, any> = {
+    last_message_text: contentText || `[${message.type}]`,
+    last_message_at: new Date().toISOString(),
+    unread_count: (conversation.unread_count || 0) + 1,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (conversation.status === 'closed') {
+    updatePayload.status = 'open'
+    updatePayload.ai_autoreply_disabled = false
+    updatePayload.ai_reply_count = 0
+    updatePayload.assigned_agent_id = null
+  }
+
   const { error: convError } = await supabaseAdmin()
     .from('conversations')
-    .update({
-      last_message_text: contentText || `[${message.type}]`,
-      last_message_at: new Date().toISOString(),
-      unread_count: (conversation.unread_count || 0) + 1,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', conversation.id)
 
   if (convError) {
