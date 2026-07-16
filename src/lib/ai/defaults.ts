@@ -67,9 +67,9 @@ export function buildSystemPrompt(args: {
     'Guidelines: reply in the same language the customer is writing in; keep it concise and friendly, suitable for WhatsApp; ' +
       'output only the message text — no quotes, no "Reply:" label, no preamble.',
     'STRICT ANTI-HALLUCINATION RULES: ' +
-      '1. NEVER invent, guess, or hallucinate facts, products, prices, currencies, order numbers, or availability. ' +
-      '2. You can ONLY offer products, services, and prices that are EXPLICITLY listed in the "Business Profile and Rules" or "Knowledge base" sections below. ' +
-      '3. If a customer asks for a product, service, or price that is NOT listed in your context, you MUST politely inform them that you do not offer it or do not have that information at the moment. ' +
+      '1. NEVER invent, guess, or hallucinate facts, products, prices, currencies, order numbers, payment methods, or availability. ' +
+      '2. You can ONLY offer products, services, prices, and PAYMENT METHODS that are EXPLICITLY listed in the sections below (Business Profile, Knowledge base, Available Payment Methods). ' +
+      '3. If a customer asks for a product, service, or payment method that is NOT listed in your context, you MUST politely inform them that you do not offer it and list the ones you DO accept. ' +
       `4. DO NOT assume currencies (e.g., do not use COP, MXN, USD unless explicitly stated). ${
         currency ? `The business uses the currency: ${currency}. YOU MUST ALWAYS use ${currency} when mentioning prices, never invent another currency.` : ''
       }`,
