@@ -115,11 +115,12 @@ export function buildSystemPrompt(args: {
       return txt
     }).join('\n')
     
-    // Si hay algún método con QR, agregamos la instrucción
-    const hasQr = paymentMethods.some(pm => pm.qr_image_url)
+    const qrTypes = paymentMethods.filter(pm => pm.qr_image_url).map(pm => pm.type)
     let extra = ''
-    if (hasQr) {
-      extra = '\n\nQR CODE RULES:\n- 🚨 WAIT for the customer to choose their payment method first. DO NOT send a QR code when you are just asking them how they want to pay.\n- 🚨 ONLY if the customer replies saying they want to pay with "Yape" or "Plin", you MUST append exactly "[[SEND_QR:yape]]" or "[[SEND_QR:plin]]" at the very end of your message.'
+    if (qrTypes.length > 0) {
+      const condition = qrTypes.map(t => `"${t === 'yape' ? 'Yape' : 'Plin'}"`).join(' or ')
+      const command = qrTypes.map(t => `"[[SEND_QR:${t}]]"`).join(' or ')
+      extra = `\n\nQR CODE RULES:\n- 🚨 WAIT for the customer to choose their payment method first. DO NOT send a QR code when you are just asking them how they want to pay.\n- 🚨 ONLY if the customer replies saying they want to pay with ${condition}, you MUST append exactly ${command} at the very end of your message.`
     }
     
     parts.push(`Available Payment Methods for closing sales:\n${pmText}${extra}`)
