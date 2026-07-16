@@ -119,7 +119,7 @@ export function buildSystemPrompt(args: {
     const hasQr = paymentMethods.some(pm => pm.qr_image_url)
     let extra = ''
     if (hasQr) {
-      extra = '\n\nIMPORTANT FOR QR CODES: You can send a QR code for Yape or Plin by appending exactly "[[SEND_QR:yape]]" or "[[SEND_QR:plin]]" at the very end of your message. CRITICAL RULE: ONLY append this code if the customer has EXPLICITLY confirmed they are ready to pay with Yape or Plin right now. DO NOT append it if you are merely listing payment options, or asking how they want to pay. Only send the QR when closing the sale after their confirmation.'
+      extra = '\n\nQR CODE RULES:\n- 🚨 WAIT for the customer to choose their payment method first. DO NOT send a QR code when you are just asking them how they want to pay.\n- 🚨 ONLY if the customer replies saying they want to pay with "Yape" or "Plin", you MUST append exactly "[[SEND_QR:yape]]" or "[[SEND_QR:plin]]" at the very end of your message.'
     }
     
     parts.push(`Available Payment Methods for closing sales:\n${pmText}${extra}`)
