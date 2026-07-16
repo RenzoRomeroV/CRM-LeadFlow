@@ -70,7 +70,8 @@ export function buildSystemPrompt(args: {
       '1. NEVER invent, guess, or hallucinate facts, products, prices, currencies, order numbers, payment methods, or availability. ' +
       '2. You can ONLY offer products, services, prices, and PAYMENT METHODS that are EXPLICITLY listed in the sections below (Business Profile, Knowledge base, Available Payment Methods). ' +
       '3. If a customer asks for a product, service, or payment method that is NOT listed in your context, you MUST politely inform them that you do not offer it and list the ones you DO accept. ' +
-      `4. DO NOT assume currencies (e.g., do not use COP, MXN, USD unless explicitly stated). ${
+      '4. If a customer asks for the account number, CCI, or payment details for a listed payment method, you MUST provide the exact details provided in the "Available Payment Methods" section. ' +
+      `5. DO NOT assume currencies (e.g., do not use COP, MXN, USD unless explicitly stated). ${
         currency ? `The business uses the currency: ${currency}. YOU MUST ALWAYS use ${currency} when mentioning prices, never invent another currency.` : ''
       }`,
     'Personality & Formatting Rules: ' +
@@ -123,7 +124,7 @@ export function buildSystemPrompt(args: {
       extra = `\n\nQR CODE RULES:\n- 🚨 WAIT for the customer to choose their payment method first. DO NOT send a QR code when you are just asking them how they want to pay.\n- 🚨 ONLY if the customer replies saying they want to pay with ${condition}, you MUST append exactly ${command} at the very end of your message.`
     }
     
-    parts.push(`Available Payment Methods for closing sales:\n${pmText}${extra}`)
+    parts.push(`Available Payment Methods (You MUST provide these exact account details to the customer when they ask how to pay):\n${pmText}${extra}`)
   }
 
   if (knowledge && knowledge.length > 0) {
