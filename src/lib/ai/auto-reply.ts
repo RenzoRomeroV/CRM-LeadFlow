@@ -196,6 +196,14 @@ export async function dispatchInboundToAiReply(
     let finalText = text
     let sendQrType: string | null = null
     let createDealValue: number | null = null
+    let winDeal = false
+
+    // Look for [[WIN_DEAL]]
+    const winMatch = finalText.match(/\[\[WIN_DEAL\]\]/i)
+    if (winMatch) {
+      winDeal = true
+      finalText = finalText.replace(/\[\[WIN_DEAL\]\]/gi, '').trim()
+    }
 
     // Look for [[CREATE_DEAL:value]]
     const dealMatch = finalText.match(/\[\[CREATE_DEAL:([\d.]+)\]\]/i)
@@ -285,6 +293,40 @@ export async function dispatchInboundToAiReply(
             status: 'open',
           })
         }
+      }
+    }
+
+    // Process winning a deal
+    if (winDeal) {
+      // Find the latest open deal for this conversation
+      const { data: openDeal } = await db
+        .from('deals')
+        .select('id, pipeline_id')
+        .eq('conversation_id', conversationId)
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        
+      if (openDeal) {
+        // Try to find a stage named "Ganado" to move it to
+        const { data: ganadoStage } = await db
+          .from('pipeline_stages')
+          .select('id')
+          .eq('pipeline_id', openDeal.pipeline_id)
+          .ilike('name', '%Ganado%')
+          .limit(1)
+          .maybeSingle()
+          
+        const updatePayload: Record<string, any> = { status: 'won' }
+        if (ganadoStage) {
+          updatePayload.stage_id = ganadoStage.id
+        }
+        
+        await db
+          .from('deals')
+          .update(updatePayload)
+          .eq('id', openDeal.id)
       }
     }
   } catch (err) {
