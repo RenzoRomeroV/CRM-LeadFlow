@@ -195,6 +195,14 @@ export async function dispatchInboundToAiReply(
 
     let finalText = text
     let sendQrType: string | null = null
+    let createDealValue: number | null = null
+
+    // Look for [[CREATE_DEAL:value]]
+    const dealMatch = finalText.match(/\[\[CREATE_DEAL:([\d.]+)\]\]/i)
+    if (dealMatch) {
+      createDealValue = parseFloat(dealMatch[1])
+      finalText = finalText.replace(/\[\[CREATE_DEAL:[\d.]+\]\]/gi, '').trim()
+    }
 
     // Look for [[SEND_QR:yape]] or [[SEND_QR:plin]]
     const qrMatch = finalText.match(/\[\[SEND_QR:(yape|plin)\]\]/i)
@@ -233,6 +241,51 @@ export async function dispatchInboundToAiReply(
         text: finalText,
         aiGenerated: true,
       })
+    }
+
+    // Process deal creation after sending message
+    if (createDealValue !== null && !Number.isNaN(createDealValue)) {
+      // Find the first pipeline for this account
+      const { data: pipeline } = await db
+        .from('pipelines')
+        .select('id')
+        .eq('user_id', configOwnerUserId)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+
+      if (pipeline) {
+        // Find the first stage of that pipeline
+        const { data: stage } = await db
+          .from('pipeline_stages')
+          .select('id')
+          .eq('pipeline_id', pipeline.id)
+          .order('position', { ascending: true })
+          .limit(1)
+          .maybeSingle()
+
+        if (stage) {
+          // Find the contact's name for the deal title
+          const { data: contact } = await db
+            .from('contacts')
+            .select('name')
+            .eq('id', contactId)
+            .maybeSingle()
+
+          await db.from('deals').insert({
+            account_id: accountId,
+            user_id: configOwnerUserId,
+            pipeline_id: pipeline.id,
+            stage_id: stage.id,
+            contact_id: contactId,
+            conversation_id: conversationId,
+            title: `Venta por WhatsApp - ${contact?.name || 'Cliente'}`,
+            value: createDealValue,
+            currency: acct?.default_currency ?? 'USD',
+            status: 'open',
+          })
+        }
+      }
     }
   } catch (err) {
     console.error('[ai auto-reply] dispatch failed:', err)
