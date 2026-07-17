@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
@@ -35,13 +38,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to generate code' }, { status: 500 });
     }
 
-    // SIMULATED EMAIL SENDING
-    console.log('\n\n=========================================================');
-    console.log(`🔐 MFA CODE FOR ${user.email}`);
-    console.log(`Tu código de verificación de 6 dígitos es: ${code}`);
-    console.log('=========================================================\n\n');
+    // Send email via Resend
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('RESEND_API_KEY is not set. Falling back to console log.');
+      console.log(`🔐 MFA CODE FOR ${user.email}: ${code}`);
+    } else {
+      const { error: emailError } = await resend.emails.send({
+        from: 'LeadFlow Security <onboarding@resend.dev>',
+        to: user.email!,
+        subject: 'Código de Verificación - LeadFlow',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 8px;">
+            <h2 style="color: #333; text-align: center;">Verificación de Seguridad</h2>
+            <p style="color: #555; text-align: center; font-size: 16px;">
+              Tu código de verificación de 6 dígitos es:
+            </p>
+            <div style="background-color: #f4f4f5; padding: 16px; border-radius: 8px; text-align: center; margin: 24px 0;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #000;">${code}</span>
+            </div>
+            <p style="color: #888; text-align: center; font-size: 14px;">
+              Este código expirará en 2 minutos. Si no solicitaste este código, puedes ignorar este correo.
+            </p>
+          </div>
+        `
+      });
 
-    return NextResponse.json({ success: true, message: 'Code sent via simulated email' });
+      if (emailError) {
+        console.error('Error sending MFA email via Resend:', emailError);
+        return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ success: true, message: 'Code sent successfully' });
   } catch (err) {
     console.error('MFA Send Error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
