@@ -143,22 +143,22 @@ export async function dispatchInboundToAiReply(
       if (ocrData) {
         if (ocrData.error === 'DUPLICATE_VOUCHER') {
           messages.push({
-            role: 'system',
-            content: `El cliente envió una imagen de un comprobante de pago, pero el número de operación (${ocrData.operacion}) YA FUE UTILIZADO ANTERIORMENTE. ¡Es un comprobante duplicado o inválido!
+            role: 'user',
+            content: `[SISTEMA: El cliente envió una imagen de un comprobante de pago, pero el número de operación (${ocrData.operacion}) YA FUE UTILIZADO ANTERIORMENTE. ¡Es un comprobante duplicado o inválido!
 Reglas estrictas:
 - NUNCA uses la macro [[WIN_DEAL]].
-- Informa al cliente amablemente que ese comprobante ya fue registrado anteriormente y que debe enviar uno nuevo o comunicarse con soporte.`
+- Informa al cliente amablemente que ese comprobante ya fue registrado anteriormente y que debe enviar uno nuevo o comunicarse con soporte.]`
           })
         } else {
           messages.push({
-            role: 'system',
-            content: `El cliente envió una imagen de un comprobante de pago. La IA de Visión extrajo los siguientes datos del comprobante:
+            role: 'user',
+            content: `[SISTEMA: El cliente envió una imagen de un comprobante de pago. La IA de Visión extrajo los siguientes datos del comprobante:
 ${JSON.stringify(ocrData, null, 2)}
             
 Reglas estrictas para comprobantes:
 1. Revisa si el "monto" extraído coincide exactamente con el monto total que se le indicó al cliente a pagar.
 2. Si el monto coincide, responde confirmando el pago exitosamente de manera amable Y AGREGA OBLIGATORIAMENTE la macro [[WIN_DEAL]] al final de tu respuesta. Ejemplo: "¡Pago confirmado! Tu pedido ha sido procesado... [[WIN_DEAL]]".
-3. Si el monto NO coincide o no se encontró, dile amablemente al cliente que el monto del comprobante (S/${ocrData.monto}) no coincide con el esperado, o que la imagen no es legible, y pide que lo verifique. NO uses la macro [[WIN_DEAL]].`
+3. Si el monto NO coincide o no se encontró, dile amablemente al cliente que el monto del comprobante (S/${ocrData.monto}) no coincide con el esperado, o que la imagen no es legible, y pide que lo verifique. NO uses la macro [[WIN_DEAL]].]`
           })
         }
       }
