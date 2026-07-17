@@ -1,4 +1,8 @@
-export async function analyzeVoucherWithAI(imageUrl: string) {
+import { supabaseAdmin } from './admin-client'
+import { decrypt } from '@/lib/whatsapp/encryption'
+import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
+
+export async function analyzeVoucherWithAI(imageUrl: string, accountId: string) {
   // Rotate between keys if multiple are provided via comma
   const groqKeys = (process.env.GROQ_API_KEY_VOUCHER || '')
     .split(',')
@@ -16,14 +20,29 @@ export async function analyzeVoucherWithAI(imageUrl: string) {
   try {
     console.log('[VisionService] 🚀 Iniciando análisis financiero con Llama 4 Scout...')
 
-    // 1. Download image and convert to base64
-    const responseImage = await fetch(imageUrl)
-    if (!responseImage.ok) {
-      throw new Error(`Failed to download image: ${responseImage.statusText}`)
+    // 1. Extract Media ID and download directly from Meta
+    const mediaId = imageUrl.split('/').pop()
+    if (!mediaId) throw new Error('Could not extract media ID from URL')
+
+    const { data: config, error: configError } = await supabaseAdmin()
+      .from('whatsapp_config')
+      .select('access_token')
+      .eq('account_id', accountId)
+      .single()
+
+    if (configError || !config) {
+      throw new Error('WhatsApp config not found for account')
     }
-    const arrayBuffer = await responseImage.arrayBuffer()
-    const base64Image = Buffer.from(arrayBuffer).toString('base64')
-    const mimeType = responseImage.headers.get('content-type') || 'image/jpeg'
+
+    const accessToken = decrypt(config.access_token)
+    const mediaInfo = await getMediaUrl({ mediaId, accessToken })
+    const { buffer, contentType } = await downloadMedia({
+      downloadUrl: mediaInfo.url,
+      accessToken,
+    })
+
+    const base64Image = Buffer.from(buffer).toString('base64')
+    const mimeType = contentType || mediaInfo.mimeType || 'image/jpeg'
 
     const prompt = `Analiza este comprobante de pago (Yape o Plin) y extrae TODOS los datos en formato JSON estricto:
     {
@@ -33,7 +52,7 @@ export async function analyzeVoucherWithAI(imageUrl: string) {
       "fecha": "string (fecha y hora)",
       "tipo": "YAPE" o "PLIN"
     }
-    Responde solo el JSON puro.`
+    Responde solo el JSON puro sin bloques de código.`
 
     // 2. Call the API with key rotation
     for (const key of groqKeys) {
@@ -74,8 +93,11 @@ export async function analyzeVoucherWithAI(imageUrl: string) {
           }
 
           const data = await res.json()
-          const extractedJson = JSON.parse(data.choices[0].message.content)
+          let content = data.choices[0].message.content
+          // Clean up formatting in case the model returns markdown codeblocks
+          content = content.replace(/```json/gi, '').replace(/```/g, '').trim()
           
+          const extractedJson = JSON.parse(content)
           console.log('[VisionService] ✅ ¡ÉXITO! Datos extraídos:', extractedJson)
           return extractedJson
         } catch (e: any) {

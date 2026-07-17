@@ -138,7 +138,7 @@ export async function dispatchInboundToAiReply(
       .maybeSingle()
 
     if (latestMsg?.content_type === 'image' && latestMsg.media_url) {
-      const ocrData = await analyzeVoucherWithAI(latestMsg.media_url)
+      const ocrData = await analyzeVoucherWithAI(latestMsg.media_url, accountId)
       
       if (ocrData) {
         messages.push({
