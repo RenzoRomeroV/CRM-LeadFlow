@@ -2,7 +2,7 @@ import { supabaseAdmin } from './admin-client'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 
-export async function analyzeVoucherWithAI(imageUrl: string, accountId: string) {
+export async function analyzeVoucherWithAI(imageUrl: string, accountId: string, messageId: string) {
   // Rotate between keys if multiple are provided via comma
   const groqKeys = (process.env.GROQ_API_KEY_VOUCHER || '')
     .split(',')
@@ -99,6 +99,30 @@ export async function analyzeVoucherWithAI(imageUrl: string, accountId: string) 
           
           const extractedJson = JSON.parse(content)
           console.log('[VisionService] ✅ ¡ÉXITO! Datos extraídos:', extractedJson)
+
+          // Protect against duplicates
+          if (extractedJson.operacion && extractedJson.tipo) {
+            const { error: insertError } = await supabaseAdmin()
+              .from('payment_vouchers')
+              .insert({
+                account_id: accountId,
+                operacion: String(extractedJson.operacion).trim(),
+                monto: typeof extractedJson.monto === 'number' ? extractedJson.monto : null,
+                fecha: extractedJson.fecha,
+                nombre: extractedJson.nombre,
+                tipo: String(extractedJson.tipo).toUpperCase().trim(),
+                message_id: messageId
+              })
+            
+            if (insertError) {
+              if (insertError.code === '23505') { // Postgres Unique Violation
+                console.warn(`⚠️ Voucher duplicado detectado (Operación: ${extractedJson.operacion})`)
+                return { ...extractedJson, error: 'DUPLICATE_VOUCHER' }
+              }
+              console.error('[VisionService] Error guardando voucher:', insertError)
+            }
+          }
+
           return extractedJson
         } catch (e: any) {
           const msg = e.message || String(e)

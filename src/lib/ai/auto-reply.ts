@@ -130,7 +130,7 @@ export async function dispatchInboundToAiReply(
     // Check if the latest inbound message is an image to trigger OCR
     const { data: latestMsg } = await db
       .from('messages')
-      .select('content_type, media_url')
+      .select('id, content_type, media_url')
       .eq('conversation_id', conversationId)
       .eq('sender_type', 'customer')
       .order('created_at', { ascending: false })
@@ -138,13 +138,29 @@ export async function dispatchInboundToAiReply(
       .maybeSingle()
 
     if (latestMsg?.content_type === 'image' && latestMsg.media_url) {
-      const ocrData = await analyzeVoucherWithAI(latestMsg.media_url, accountId)
+      const ocrData = await analyzeVoucherWithAI(latestMsg.media_url, accountId, latestMsg.id)
       
       if (ocrData) {
-        messages.push({
-          role: 'user',
-          content: `[SISTEMA: El usuario acaba de enviar una imagen (comprobante de pago). El sistema de visión analizó la imagen y extrajo estos datos: ${JSON.stringify(ocrData)}. Verifica si el monto coincide con lo acordado o con el total de su pedido. Si es correcto, responde confirmando el pago y utiliza OBLIGATORIAMENTE la etiqueta [[WIN_DEAL]] al final de tu mensaje para actualizar el CRM. Si el monto no cuadra, infórmale cordialmente.]`
-        })
+        if (ocrData.error === 'DUPLICATE_VOUCHER') {
+          messages.push({
+            role: 'system',
+            content: `El cliente envió una imagen de un comprobante de pago, pero el número de operación (${ocrData.operacion}) YA FUE UTILIZADO ANTERIORMENTE. ¡Es un comprobante duplicado o inválido!
+Reglas estrictas:
+- NUNCA uses la macro [[WIN_DEAL]].
+- Informa al cliente amablemente que ese comprobante ya fue registrado anteriormente y que debe enviar uno nuevo o comunicarse con soporte.`
+          })
+        } else {
+          messages.push({
+            role: 'system',
+            content: `El cliente envió una imagen de un comprobante de pago. La IA de Visión extrajo los siguientes datos del comprobante:
+${JSON.stringify(ocrData, null, 2)}
+            
+Reglas estrictas para comprobantes:
+1. Revisa si el "monto" extraído coincide exactamente con el monto total que se le indicó al cliente a pagar.
+2. Si el monto coincide, responde confirmando el pago exitosamente de manera amable Y AGREGA OBLIGATORIAMENTE la macro [[WIN_DEAL]] al final de tu respuesta. Ejemplo: "¡Pago confirmado! Tu pedido ha sido procesado... [[WIN_DEAL]]".
+3. Si el monto NO coincide o no se encontró, dile amablemente al cliente que el monto del comprobante (S/${ocrData.monto}) no coincide con el esperado, o que la imagen no es legible, y pide que lo verifique. NO uses la macro [[WIN_DEAL]].`
+          })
+        }
       }
     }
 
