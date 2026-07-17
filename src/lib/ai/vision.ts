@@ -14,11 +14,11 @@ export async function analyzeVoucherWithAI(imageUrl: string, accountId: string, 
     groqKeys.push(process.env.GROQ_API_KEY)
   }
 
-  // Llama 4 Scout for Vision/OCR
-  const models = ['meta-llama/llama-4-scout-17b-16e-instruct']
+  // Llama 3.2 Vision Preview models on Groq
+  const models = ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
 
   try {
-    console.log('[VisionService] 🚀 Iniciando análisis financiero con Llama 4 Scout...')
+    console.log('[VisionService] 🚀 Iniciando análisis financiero con Llama 3.2 Vision...')
 
     // 1. Extract Media ID and download directly from Meta
     const mediaId = imageUrl.split('/').pop()
