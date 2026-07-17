@@ -9,6 +9,7 @@ import { logAiUsage } from './usage'
 import { latestUserMessage } from './query'
 import { engineSendText, engineSendMedia } from '@/lib/flows/meta-send'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { analyzeVoucherWithAI } from './vision'
 
 interface DispatchArgs {
   /** Tenancy key — drives config, contact, and whatsapp_config lookups. */
@@ -125,6 +126,27 @@ export async function dispatchInboundToAiReply(
       paymentMethods: paymentMethods || [],
       currency: acct?.default_currency,
     })
+
+    // Check if the latest inbound message is an image to trigger OCR
+    const { data: latestMsg } = await db
+      .from('messages')
+      .select('content_type, media_url')
+      .eq('conversation_id', conversationId)
+      .eq('sender_type', 'customer')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (latestMsg?.content_type === 'image' && latestMsg.media_url) {
+      const ocrData = await analyzeVoucherWithAI(latestMsg.media_url)
+      
+      if (ocrData) {
+        messages.push({
+          role: 'user',
+          content: `[SISTEMA: El usuario acaba de enviar una imagen (comprobante de pago). El sistema de visión analizó la imagen y extrajo estos datos: ${JSON.stringify(ocrData)}. Verifica si el monto coincide con lo acordado o con el total de su pedido. Si es correcto, responde confirmando el pago y utiliza OBLIGATORIAMENTE la etiqueta [[WIN_DEAL]] al final de tu mensaje para actualizar el CRM. Si el monto no cuadra, infórmale cordialmente.]`
+        })
+      }
+    }
 
     const { text, handoff, usage } = await generateReply({
       config,
