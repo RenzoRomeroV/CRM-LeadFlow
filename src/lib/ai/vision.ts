@@ -49,6 +49,7 @@ export async function analyzeVoucherWithAI(imageUrl: string, accountId: string, 
       "monto": número (ej: 29.90),
       "operacion": "string (número de operación)",
       "nombre": "string (nombre del que paga)",
+      "destino": "string (nombre a quien se le pagó, Destino o Yapeaste a)",
       "fecha": "string (fecha y hora)",
       "tipo": "YAPE" o "PLIN"
     }

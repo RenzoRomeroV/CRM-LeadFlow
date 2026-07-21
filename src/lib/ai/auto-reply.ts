@@ -183,8 +183,13 @@ Reglas estrictas:
             content: `[SISTEMA: El cliente acaba de enviar un comprobante de pago. Nuestro sistema de Visión (OCR) ha extraído los siguientes datos del comprobante:
 ${JSON.stringify(ocrData, null, 2)}
             
-Por favor, analiza estos datos. Si el monto extraído coincide con lo que el cliente debía pagar, confírmale amablemente que su pago fue exitoso y asegúrate de añadir la macro [[WIN_DEAL]] al final de tu mensaje.
-Si el monto no coincide o no es legible, coméntaselo amablemente para que lo verifique, y NO uses la macro [[WIN_DEAL]].]`
+Por favor, analiza estos datos con las siguientes reglas estrictas:
+1. El "monto" extraído DEBE coincidir exactamente con el total que el cliente debía pagar.
+2. El "destino" (a quién se pagó) DEBE coincidir con el nombre de nuestra empresa o titular de la cuenta configurada.
+3. La "fecha" DEBE ser reciente (ten en cuenta que hoy es ${new Date().toLocaleDateString()}).
+
+Si TODO es correcto (monto, destino y fecha recientes), confírmale amablemente que su pago fue exitoso y asegúrate de añadir la macro [[WIN_DEAL]] al final de tu mensaje.
+Si ALGO no coincide (monto incorrecto, destino extraño, o fecha muy antigua) o no es legible, coméntaselo amablemente para que lo verifique, y NO uses la macro [[WIN_DEAL]].]`
           })
         }
       }
