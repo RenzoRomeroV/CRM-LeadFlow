@@ -349,6 +349,11 @@ Si ALGO no coincide (monto incorrecto, destino extraño, o fecha muy antigua) o 
         break
       }
     }
+    
+    if (finalText && finalText.includes('[[WIN_DEAL]]')) {
+      winDeal = true
+      finalText = finalText.replace('[[WIN_DEAL]]', '').trim()
+    }
 
     // Atomically claim a reply slot AFTER the agent finishes thinking.
     const { data: claimed, error: claimErr } = await db.rpc(
@@ -503,6 +508,10 @@ Si ALGO no coincide (monto incorrecto, destino extraño, o fecha muy antigua) o 
         if (Object.keys(updatePayload).length > 0) {
           await db.from('deals').update(updatePayload).eq('id', openDeal.id)
         }
+      }
+      
+      if (winDeal || loseDeal) {
+        await db.from('conversations').update({ status: 'closed' }).eq('id', conversationId)
       }
     }
   } catch (err) {
