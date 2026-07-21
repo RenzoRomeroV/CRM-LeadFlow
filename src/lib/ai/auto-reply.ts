@@ -296,7 +296,13 @@ Si el monto no coincide o no es legible, coméntaselo amablemente para que lo ve
                   .eq('account_id', accountId)
                   
                 if (query) {
-                  dbQuery = dbQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+                  const queryWords = query.split(' ').filter(w => w.length > 2);
+                  if (queryWords.length > 0) {
+                    const orConditions = queryWords.map(w => `name.ilike.%${w}%,description.ilike.%${w}%`).join(',');
+                    dbQuery = dbQuery.or(orConditions)
+                  } else {
+                    dbQuery = dbQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+                  }
                 }
                 
                 if (args.atributos && typeof args.atributos === 'object') {
