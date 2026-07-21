@@ -305,10 +305,6 @@ Si el monto no coincide o no es legible, coméntaselo amablemente para que lo ve
                   }
                 }
                 
-                if (args.atributos && typeof args.atributos === 'object') {
-                  dbQuery = dbQuery.contains('product_variants.attributes', args.atributos)
-                }
-                
                 const { data: products } = await dbQuery.limit(5)
                 
                 let resultText = ''
@@ -319,27 +315,7 @@ Si el monto no coincide o no es legible, coméntaselo amablemente para que lo ve
                     matches: products
                   })
                 } else {
-                  // Si no hay resultados pero se pidieron atributos específicos, buscar alternativas
-                  if (args.atributos && typeof args.atributos === 'object' && query) {
-                    const { data: alternatives } = await db
-                      .from('products')
-                      .select('name, description, product_variants!inner(name, price, stock, attributes)')
-                      .eq('account_id', accountId)
-                      .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-                      .limit(5)
-                      
-                    if (alternatives && alternatives.length > 0) {
-                      resultText = JSON.stringify({
-                        status: 'NOT_FOUND_BUT_ALTERNATIVES_AVAILABLE',
-                        requested: { query, atributos: args.atributos },
-                        alternatives
-                      })
-                    } else {
-                      resultText = JSON.stringify({ status: 'NOT_FOUND', requested: { query } })
-                    }
-                  } else {
-                    resultText = JSON.stringify({ status: 'NOT_FOUND', requested: { query } })
-                  }
+                  resultText = JSON.stringify({ status: 'NOT_FOUND', requested: { query } })
                 }
                 
                 console.log(`[ai auto-reply] TOOL_RESULT: ${resultText}`);
