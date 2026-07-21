@@ -377,52 +377,63 @@ export function DealForm({
             </div>
 
             {deal && (
-              <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-3">
+              <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   {t("status")}
                 </p>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    onClick={() => handleStatusChange("won")}
-                    disabled={!!statusAction || deal.status === "won"}
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {statusAction === "won" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="mr-1 h-4 w-4" />
-                        {t("markAsWon")}
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => handleStatusChange("lost")}
-                    disabled={!!statusAction || deal.status === "lost"}
-                    className="flex-1 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {statusAction === "lost" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <X className="mr-1 h-4 w-4" />
-                        {t("markAsLost")}
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {deal.status && deal.status !== "open" && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => handleStatusChange("open")}
-                    disabled={!!statusAction}
-                    className="w-full text-muted-foreground hover:text-foreground"
-                  >
-                    {t("reopenDeal")}
-                  </Button>
+                {deal.status === "open" ? (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => handleStatusChange("won")}
+                      disabled={!!statusAction}
+                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {statusAction === "won" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="mr-1 h-4 w-4" />
+                          {t("markAsWon")}
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleStatusChange("lost")}
+                      disabled={!!statusAction}
+                      className="flex-1 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {statusAction === "lost" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <X className="mr-1 h-4 w-4" />
+                          {t("markAsLost")}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <div className={`flex items-center justify-center rounded-md py-2 px-3 text-sm font-medium ${deal.status === 'won' ? 'bg-primary/10 text-primary' : 'bg-red-500/10 text-red-500'}`}>
+                      {deal.status === 'won' ? <Check className="mr-2 h-4 w-4" /> : <X className="mr-2 h-4 w-4" />}
+                      {deal.status === 'won' ? (t("markAsWon") || "Ganado").replace("Marcar como ", "") : (t("markAsLost") || "Perdido").replace("Marcar como ", "")}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleStatusChange("open")}
+                      disabled={!!statusAction}
+                      className="w-full"
+                    >
+                      {statusAction === "open" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        t("reopenDeal")
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
