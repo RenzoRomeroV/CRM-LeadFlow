@@ -250,7 +250,7 @@ Si el monto no coincide o no es legible, coméntaselo amablemente para que lo ve
         for (const tc of toolCalls) {
           try {
             console.log(`[ai auto-reply] EXEC_TOOL: ${tc.function.name} with ${tc.function.arguments}`);
-            const args = JSON.parse(tc.function.arguments || '{}')
+            const args = JSON.parse(tc.function.arguments || '{}') || {}
             switch (tc.function.name) {
               case 'create_deal':
                 createDealValue = args.amount !== undefined ? Number(args.amount) : 0
