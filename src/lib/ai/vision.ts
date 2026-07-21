@@ -2,20 +2,25 @@ import { supabaseAdmin } from './admin-client'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 
-export async function analyzeVoucherWithAI(imageUrl: string, accountId: string, messageId: string) {
-  // Rotate between keys if multiple are provided via comma
-  const groqKeys = (process.env.GROQ_API_KEY_VOUCHER || '')
-    .split(',')
-    .map((k) => k.trim())
-    .filter(Boolean)
-    
-  // Fallback to the main AI Groq key if the specific voucher keys aren't set
-  if (groqKeys.length === 0 && process.env.GROQ_API_KEY) {
-    groqKeys.push(process.env.GROQ_API_KEY)
+export async function analyzeVoucherWithAI(imageUrl: string, accountId: string, messageId: string, aiConfig?: any) {
+  // Determine provider settings
+  const isOpenAI = aiConfig?.provider === 'openai' && aiConfig?.apiKey;
+  
+  const keys = isOpenAI 
+    ? [aiConfig.apiKey]
+    : (process.env.GROQ_API_KEY_VOUCHER || '').split(',').map((k) => k.trim()).filter(Boolean);
+
+  if (!isOpenAI && keys.length === 0 && process.env.GROQ_API_KEY) {
+    keys.push(process.env.GROQ_API_KEY)
   }
 
-  // Llama 3.2 Vision Preview models on Groq
-  const models = ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
+  const models = isOpenAI 
+    ? [aiConfig.model || 'gpt-4o-mini']
+    : ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
+    
+  const endpoint = isOpenAI
+    ? 'https://api.openai.com/v1/chat/completions'
+    : 'https://api.groq.com/openai/v1/chat/completions'
 
   try {
     console.log('[VisionService] 🚀 Iniciando análisis financiero con Llama 3.2 Vision...')
@@ -56,7 +61,7 @@ export async function analyzeVoucherWithAI(imageUrl: string, accountId: string, 
     Responde solo el JSON puro sin bloques de código.`
 
     // 2. Call the API with key rotation
-    for (const key of groqKeys) {
+    for (const key of keys) {
       for (const model of models) {
         try {
           console.log(`[VisionService] Probando ${model} (Llave ...${key.slice(-4)})...`)
@@ -64,7 +69,7 @@ export async function analyzeVoucherWithAI(imageUrl: string, accountId: string, 
           const controller = new AbortController()
           const timeoutId = setTimeout(() => controller.abort(), 25000)
 
-          const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          const res = await fetch(endpoint, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${key}`,

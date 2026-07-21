@@ -166,7 +166,7 @@ export async function dispatchInboundToAiReply(
         }
       }
 
-      const ocrData = await analyzeVoucherWithAI(latestMsg.media_url, accountId, latestMsg.id)
+      const ocrData = await analyzeVoucherWithAI(latestMsg.media_url, accountId, latestMsg.id, config)
       
       if (ocrData) {
         if (ocrData.error === 'DUPLICATE_VOUCHER') {
