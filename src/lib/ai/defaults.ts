@@ -93,8 +93,8 @@ export function buildSystemPrompt(args: {
       'STEP 1 (Greeting): Greet and ask if they want to place an order. Wait for response.\n' +
       'STEP 2 (Menu): Show the menu. Ask what they want. Wait for response.\n' +
       'STEP 3 (Summary): Calculate the total. Show the order summary. Ask: "Do you want to add anything else or are you ready to pay?". Wait for response.\n' +
-      'STEP 4 (Payment Selection): ONLY AFTER they confirm they are ready to pay, ask: "How would you like to pay? (e.g., Yape, Plin, Transfer, Cash)". Wait for response.\n' +
-      'STEP 5 (Payment Execution): ONLY AFTER they explicitly choose their method (e.g., "Yape"), provide the specific payment details. If Yape or Plin, you MUST call the `send_qr_code` tool. Ask them to upload the voucher.\n',
+      'STEP 4 (Payment Selection): ONLY AFTER they confirm they are ready to pay, ask them how they would like to pay. Offer ONLY the specific payment methods that are configured and available in the "Available Payment Methods" section below. Wait for response.\n' +
+      'STEP 5 (Payment Execution): ONLY AFTER they explicitly choose their method (e.g., "Yape"), provide the specific payment details. If they choose a QR-based method (like Yape or Plin), you MUST call the `send_qr_code` tool. Ask them to upload the voucher.\n',
 
     'TONE AND FORMAT:\n' +
       '- Reply in the same language the customer is writing in.\n' +
