@@ -3,7 +3,7 @@ import { loadAiConfig } from './config'
 import { buildConversationContext } from './context'
 import { retrieveKnowledge } from './knowledge'
 import { generateReply } from './generate'
-import { buildSystemPrompt } from './defaults'
+import { buildSystemPrompt, CRM_TOOLS } from './defaults'
 import { buildHandoffSummary } from './handoff'
 import { logAiUsage } from './usage'
 import { latestUserMessage } from './query'
@@ -138,6 +138,34 @@ export async function dispatchInboundToAiReply(
       .maybeSingle()
 
     if (latestMsg?.content_type === 'image' && latestMsg.media_url) {
+      // 1. Find open deal and temporarily move it to "En revision de pago"
+      const { data: openDealRev } = await db
+        .from('deals')
+        .select('id, pipeline_id')
+        .eq('conversation_id', conversationId)
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        
+      if (openDealRev) {
+        const { data: revisionStage } = await db
+          .from('pipeline_stages')
+          .select('id')
+          .eq('pipeline_id', openDealRev.pipeline_id)
+          .ilike('name', '%revision%')
+          .limit(1)
+          .maybeSingle()
+          
+        if (revisionStage) {
+          // Fire and forget update so we don't delay OCR too much
+          db.from('deals')
+            .update({ stage_id: revisionStage.id })
+            .eq('id', openDealRev.id)
+            .then(() => {}) // ignore
+        }
+      }
+
       const ocrData = await analyzeVoucherWithAI(latestMsg.media_url, accountId, latestMsg.id)
       
       if (ocrData) {
@@ -152,68 +180,166 @@ Reglas estrictas:
         } else {
           messages.push({
             role: 'user',
-            content: `[SISTEMA: El cliente envió una imagen de un comprobante de pago. La IA de Visión extrajo los siguientes datos del comprobante:
+            content: `[SISTEMA: El cliente acaba de enviar un comprobante de pago. Nuestro sistema de Visión (OCR) ha extraído los siguientes datos del comprobante:
 ${JSON.stringify(ocrData, null, 2)}
             
-Reglas estrictas para comprobantes:
-1. Revisa si el "monto" extraído coincide exactamente con el monto total que se le indicó al cliente a pagar.
-2. Si el monto coincide, responde confirmando el pago exitosamente de manera amable Y AGREGA OBLIGATORIAMENTE la macro [[WIN_DEAL]] al final de tu respuesta. Ejemplo: "¡Pago confirmado! Tu pedido ha sido procesado... [[WIN_DEAL]]".
-3. Si el monto NO coincide o no se encontró, dile amablemente al cliente que el monto del comprobante (S/${ocrData.monto}) no coincide con el esperado, o que la imagen no es legible, y pide que lo verifique. NO uses la macro [[WIN_DEAL]].]`
+Por favor, analiza estos datos. Si el monto extraído coincide con lo que el cliente debía pagar, confírmale amablemente que su pago fue exitoso y asegúrate de añadir la macro [[WIN_DEAL]] al final de tu mensaje.
+Si el monto no coincide o no es legible, coméntaselo amablemente para que lo verifique, y NO uses la macro [[WIN_DEAL]].]`
           })
         }
       }
     }
 
-    const { text, handoff, usage } = await generateReply({
-      config,
-      systemPrompt,
-      messages,
-    })
+    let finalText = ''
+    let sendQrType: string | null = null
+    let createDealValue: number | null = null
+    let winDeal = false
+    let updateStageName: string | null = null
+    let loseDeal = false
 
-    // Record token spend on the account's BYO key. Fire-and-forget so it
-    // never adds latency to the customer-facing send: `logAiUsage`
-    // swallows its own errors, so the floating promise can't reject.
-    // Logged regardless of handoff — the provider call happened either
-    // way.
-    void logAiUsage(db, {
-      accountId,
-      conversationId,
-      mode: 'auto_reply',
-      provider: config.provider,
-      model: config.model,
-      usage,
-    })
+    let loopCount = 0
+    while (loopCount < 5) {
+      loopCount++
+      console.log(`[ai auto-reply] Loop ${loopCount} calling generateReply`)
 
-    if (handoff || !text) {
-      // The model can't (or shouldn't) answer — stop auto-replying on
-      // this thread and hand it to a human. We (a) pause the bot here
-      // (sticky until re-enabled), (b) route the conversation to the
-      // configured handoff agent — null leaves it in the shared queue —
-      // and (c) leave a short internal note so whoever picks it up has
-      // context. Assigning fires the `on_conversation_assigned` trigger,
-      // which notifies the agent.
-      const summary = buildHandoffSummary({
+      const { text, handoff, usage, toolCalls } = await generateReply({
+        config,
+        systemPrompt,
         messages,
-        replyCount: conv.ai_reply_count ?? 0,
+        tools: CRM_TOOLS,
       })
-      const update: Record<string, unknown> = {
-        ai_autoreply_disabled: true,
-        ai_handoff_summary: summary,
+
+      if (usage) {
+        void logAiUsage(db, {
+          accountId,
+          conversationId,
+          mode: 'auto_reply',
+          provider: config.provider,
+          model: config.model,
+          usage,
+        })
       }
-      // Only set the assignee when a target is configured AND the thread
-      // isn't already owned — never stomp an existing human assignment.
-      if (config.handoffAgentId && !conv.assigned_agent_id) {
-        update.assigned_agent_id = config.handoffAgentId
+
+      if (handoff || (!text && (!toolCalls || toolCalls.length === 0))) {
+        // Handoff logic
+        const summary = buildHandoffSummary({
+          messages,
+          replyCount: conv.ai_reply_count ?? 0,
+        })
+        const update: Record<string, unknown> = {
+          ai_autoreply_disabled: true,
+          ai_handoff_summary: summary,
+        }
+        if (config.handoffAgentId && !conv.assigned_agent_id) {
+          update.assigned_agent_id = config.handoffAgentId
+        }
+        await db.from('conversations').update(update).eq('id', conversationId)
+        return
       }
-      await db.from('conversations').update(update).eq('id', conversationId)
-      return
+
+      if (toolCalls && toolCalls.length > 0) {
+        console.log(`[ai auto-reply] TOOL_CALLS: ${JSON.stringify(toolCalls)}`);
+        let shouldLoop = false
+        const assistantMessage: import('./types').ChatMessage = {
+          role: 'assistant',
+          content: text || '',
+          tool_calls: toolCalls
+        }
+        messages.push(assistantMessage)
+
+        for (const tc of toolCalls) {
+          try {
+            console.log(`[ai auto-reply] EXEC_TOOL: ${tc.function.name} with ${tc.function.arguments}`);
+            const args = JSON.parse(tc.function.arguments || '{}')
+            switch (tc.function.name) {
+              case 'create_deal':
+                createDealValue = args.amount !== undefined ? Number(args.amount) : 0
+                break
+              case 'update_crm_stage':
+                if (args.stage) updateStageName = args.stage
+                break
+              case 'lose_deal':
+                loseDeal = true
+                break
+              case 'send_qr_code':
+                if (args.type) sendQrType = args.type.toLowerCase()
+                break
+              case 'buscar_producto':
+                const query = args.query || ''
+                let dbQuery = db
+                  .from('products')
+                  .select('name, description, product_variants!inner(name, price, stock, attributes)')
+                  .eq('account_id', accountId)
+                  
+                if (query) {
+                  dbQuery = dbQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+                }
+                
+                if (args.atributos && typeof args.atributos === 'object') {
+                  dbQuery = dbQuery.contains('product_variants.attributes', args.atributos)
+                }
+                
+                const { data: products } = await dbQuery.limit(5)
+                
+                let resultText = ''
+                
+                if (products && products.length > 0) {
+                  resultText = JSON.stringify({
+                    status: 'FOUND',
+                    matches: products
+                  })
+                } else {
+                  // Si no hay resultados pero se pidieron atributos específicos, buscar alternativas
+                  if (args.atributos && typeof args.atributos === 'object' && query) {
+                    const { data: alternatives } = await db
+                      .from('products')
+                      .select('name, description, product_variants!inner(name, price, stock, attributes)')
+                      .eq('account_id', accountId)
+                      .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+                      .limit(5)
+                      
+                    if (alternatives && alternatives.length > 0) {
+                      resultText = JSON.stringify({
+                        status: 'NOT_FOUND_BUT_ALTERNATIVES_AVAILABLE',
+                        requested: { query, atributos: args.atributos },
+                        alternatives
+                      })
+                    } else {
+                      resultText = JSON.stringify({ status: 'NOT_FOUND', requested: { query } })
+                    }
+                  } else {
+                    resultText = JSON.stringify({ status: 'NOT_FOUND', requested: { query } })
+                  }
+                }
+                
+                console.log(`[ai auto-reply] TOOL_RESULT: ${resultText}`);
+                messages.push({
+                  role: 'tool',
+                  content: resultText,
+                  tool_call_id: tc.id
+                })
+                shouldLoop = true
+                break
+            }
+          } catch (e) {
+            console.error('[ai auto-reply] Error parsing tool call args:', e)
+          }
+        }
+
+        if (shouldLoop) {
+          continue // Let the AI analyze the tool results
+        } else {
+          finalText = text || ''
+          break
+        }
+      } else {
+        console.log(`[ai auto-reply] NO_TOOLS_CALLED. Text: ${text}`);
+        finalText = text
+        break
+      }
     }
 
-    // Atomically claim a reply slot: the cap check + increment happen in
-    // one UPDATE, so concurrent inbounds can never overshoot the cap. If
-    // another inbound just took the last slot, `claimed` is false and we
-    // skip the send. (We consume a slot slightly before the send lands —
-    // fail-safe: under-reply rather than over-reply.)
+    // Atomically claim a reply slot AFTER the agent finishes thinking.
     const { data: claimed, error: claimErr } = await db.rpc(
       'claim_ai_reply_slot',
       {
@@ -221,42 +347,8 @@ Reglas estrictas para comprobantes:
         max_replies: config.autoReplyMaxPerConversation,
       },
     )
-    if (claimErr) {
-      // A real error here (vs. losing the cap race) is almost always a
-      // deploy issue — e.g. `claim_ai_reply_slot` not EXECUTE-able by the
-      // service role, or the migration not applied. Log it loudly: a
-      // silent return makes "auto-reply never fires" undiagnosable.
-      console.error('[ai auto-reply] claim_ai_reply_slot failed:', claimErr)
-      return
-    }
-    if (claimed !== true) return // lost the per-conversation cap race
-
-    let finalText = text
-    let sendQrType: string | null = null
-    let createDealValue: number | null = null
-    let winDeal = false
-
-    // Look for [[WIN_DEAL]]
-    const winMatch = finalText.match(/\[\[WIN_DEAL\]\]/i)
-    if (winMatch) {
-      winDeal = true
-      finalText = finalText.replace(/\[\[WIN_DEAL\]\]/gi, '').trim()
-    }
-
-    // Look for [[CREATE_DEAL:value]]
-    const dealMatch = finalText.match(/\[\[CREATE_DEAL:([\d.]+)\]\]/i)
-    if (dealMatch) {
-      createDealValue = parseFloat(dealMatch[1])
-      finalText = finalText.replace(/\[\[CREATE_DEAL:[\d.]+\]\]/gi, '').trim()
-    }
-
-    // Look for [[SEND_QR:yape]] or [[SEND_QR:plin]]
-    const qrMatch = finalText.match(/\[\[SEND_QR:(yape|plin)\]\]/i)
-    if (qrMatch) {
-      sendQrType = qrMatch[1].toLowerCase()
-      // Remove the macro from the text that the user will see
-      finalText = finalText.replace(/\[\[SEND_QR:(?:yape|plin)\]\]/gi, '').trim()
-    }
+    if (claimErr) return
+    if (claimed !== true) return 
 
     let qrImageUrl: string | null = null
     if (sendQrType && paymentMethods) {
@@ -277,7 +369,7 @@ Reglas estrictas para comprobantes:
         link: qrImageUrl,
         caption: finalText,
       })
-    } else {
+    } else if (finalText) {
       // Send as text
       await engineSendText({
         accountId,
@@ -311,31 +403,48 @@ Reglas estrictas para comprobantes:
           .maybeSingle()
 
         if (stage) {
-          // Find the contact's name for the deal title
-          const { data: contact } = await db
-            .from('contacts')
-            .select('name')
-            .eq('id', contactId)
+          // Find if there is already an open deal for this conversation
+          const { data: existingDeal } = await db
+            .from('deals')
+            .select('id')
+            .eq('conversation_id', conversationId)
+            .eq('status', 'open')
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle()
 
-          await db.from('deals').insert({
-            account_id: accountId,
-            user_id: configOwnerUserId,
-            pipeline_id: pipeline.id,
-            stage_id: stage.id,
-            contact_id: contactId,
-            conversation_id: conversationId,
-            title: `Venta por WhatsApp - ${contact?.name || 'Cliente'}`,
-            value: createDealValue,
-            currency: acct?.default_currency ?? 'USD',
-            status: 'open',
-          })
+          if (existingDeal) {
+            // Update existing deal value
+            await db.from('deals').update({
+              value: createDealValue,
+            }).eq('id', existingDeal.id)
+          } else {
+            // Find the contact's name for the deal title
+            const { data: contact } = await db
+              .from('contacts')
+              .select('name')
+              .eq('id', contactId)
+              .maybeSingle()
+
+            await db.from('deals').insert({
+              account_id: accountId,
+              user_id: configOwnerUserId,
+              pipeline_id: pipeline.id,
+              stage_id: stage.id,
+              contact_id: contactId,
+              conversation_id: conversationId,
+              title: `Venta por WhatsApp - ${contact?.name || 'Cliente'}`,
+              value: createDealValue,
+              currency: acct?.default_currency ?? 'USD',
+              status: 'open',
+            })
+          }
         }
       }
     }
 
     // Process winning a deal
-    if (winDeal) {
+    if (winDeal || loseDeal || updateStageName) {
       // Find the latest open deal for this conversation
       const { data: openDeal } = await db
         .from('deals')
@@ -347,24 +456,42 @@ Reglas estrictas para comprobantes:
         .maybeSingle()
         
       if (openDeal) {
-        // Try to find a stage named "Ganado" to move it to
-        const { data: ganadoStage } = await db
-          .from('pipeline_stages')
-          .select('id')
-          .eq('pipeline_id', openDeal.pipeline_id)
-          .ilike('name', '%Ganado%')
-          .limit(1)
-          .maybeSingle()
-          
-        const updatePayload: Record<string, any> = { status: 'won' }
-        if (ganadoStage) {
-          updatePayload.stage_id = ganadoStage.id
+        const updatePayload: Record<string, any> = {}
+        
+        if (winDeal) {
+          updatePayload.status = 'won'
+          const { data: ganadoStage } = await db
+            .from('pipeline_stages')
+            .select('id')
+            .eq('pipeline_id', openDeal.pipeline_id)
+            .ilike('name', '%Ganado%')
+            .limit(1)
+            .maybeSingle()
+          if (ganadoStage) updatePayload.stage_id = ganadoStage.id
+        } else if (loseDeal) {
+          updatePayload.status = 'lost'
+          const { data: perdidoStage } = await db
+            .from('pipeline_stages')
+            .select('id')
+            .eq('pipeline_id', openDeal.pipeline_id)
+            .ilike('name', '%Perdido%')
+            .limit(1)
+            .maybeSingle()
+          if (perdidoStage) updatePayload.stage_id = perdidoStage.id
+        } else if (updateStageName) {
+          const { data: targetStage } = await db
+            .from('pipeline_stages')
+            .select('id')
+            .eq('pipeline_id', openDeal.pipeline_id)
+            .ilike('name', `%${updateStageName}%`)
+            .limit(1)
+            .maybeSingle()
+          if (targetStage) updatePayload.stage_id = targetStage.id
         }
         
-        await db
-          .from('deals')
-          .update(updatePayload)
-          .eq('id', openDeal.id)
+        if (Object.keys(updatePayload).length > 0) {
+          await db.from('deals').update(updatePayload).eq('id', openDeal.id)
+        }
       }
     }
   } catch (err) {

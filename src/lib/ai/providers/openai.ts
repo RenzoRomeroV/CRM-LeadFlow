@@ -19,13 +19,22 @@ interface OpenAiResponse {
   }
 }
 
+interface OpenAiToolCall {
+  id: string
+  type: string
+  function?: {
+    name?: string
+    arguments?: string
+  }
+}
+
 /**
  * Call OpenAI's Chat Completions endpoint with the caller's own key.
  * Returns the raw assistant text + token usage (handoff parsing happens
  * in `generateReply`).
  */
 export async function generateOpenAi(args: ProviderArgs): Promise<ProviderResult> {
-  const { apiKey, model, systemPrompt, messages, timeoutMs } = args
+  const { apiKey, model, systemPrompt, messages, timeoutMs, tools } = args
 
   let res: Response
   try {
@@ -42,6 +51,7 @@ export async function generateOpenAi(args: ProviderArgs): Promise<ProviderResult
           ...mergeConsecutive(messages),
         ],
         max_completion_tokens: MAX_OUTPUT_TOKENS,
+        ...(tools && tools.length > 0 ? { tools } : {}),
       }),
       signal: AbortSignal.timeout(timeoutMs),
     })
@@ -53,9 +63,20 @@ export async function generateOpenAi(args: ProviderArgs): Promise<ProviderResult
     throw await providerHttpError('OpenAI', res)
   }
 
-  const data = (await res.json().catch(() => null)) as OpenAiResponse | null
-  const text = data?.choices?.[0]?.message?.content
-  if (!text || typeof text !== 'string' || !text.trim()) {
+  const data = (await res.json().catch(() => null)) as OpenAiResponse & { choices?: { message?: { content?: string, tool_calls?: OpenAiToolCall[] } }[] } | null
+  const message = data?.choices?.[0]?.message
+  const text = message?.content || ''
+  
+  const toolCalls = message?.tool_calls?.map(tc => ({
+    id: tc.id,
+    type: 'function' as const,
+    function: {
+      name: tc.function?.name || '',
+      arguments: tc.function?.arguments || '',
+    }
+  }))
+
+  if (!text && (!toolCalls || toolCalls.length === 0)) {
     throw new AiError('OpenAI returned an empty response.', {
       code: 'empty_response',
     })
@@ -65,5 +86,5 @@ export async function generateOpenAi(args: ProviderArgs): Promise<ProviderResult
     completion: data?.usage?.completion_tokens,
     total: data?.usage?.total_tokens,
   })
-  return { text, usage }
+  return { text, usage, toolCalls }
 }

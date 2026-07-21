@@ -38,8 +38,10 @@ export interface AiConfig {
 
 /** A single conversation turn in the shape both providers accept. */
 export interface ChatMessage {
-  role: 'user' | 'assistant'
+  role: 'system' | 'user' | 'assistant' | 'tool'
   content: string
+  tool_calls?: AiToolCall[]
+  tool_call_id?: string
 }
 
 /**
@@ -53,10 +55,29 @@ export interface AiUsage {
   totalTokens: number
 }
 
+export interface AiTool {
+  type: 'function'
+  function: {
+    name: string
+    description: string
+    parameters: any // JSON Schema object
+  }
+}
+
+export interface AiToolCall {
+  id: string
+  type: 'function'
+  function: {
+    name: string
+    arguments: string // JSON string
+  }
+}
+
 /** Raw text + usage a provider adapter returns before handoff parsing. */
 export interface ProviderResult {
   text: string
   usage: AiUsage | null
+  toolCalls?: AiToolCall[]
 }
 
 /** Outcome of a generation call. */
@@ -67,6 +88,8 @@ export interface GenerateResult {
   handoff: boolean
   /** Provider token usage for this call, or null when unavailable. */
   usage: AiUsage | null
+  /** Optional tool calls emitted by the model. */
+  toolCalls?: AiToolCall[]
 }
 
 /**

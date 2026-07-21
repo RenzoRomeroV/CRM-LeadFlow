@@ -12,7 +12,7 @@ const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
 
 interface AnthropicResponse {
-  content?: { type?: string; text?: string }[]
+  content?: { type?: string; text?: string; id?: string; name?: string; input?: any }[]
   usage?: { input_tokens?: number; output_tokens?: number }
 }
 
@@ -23,7 +23,7 @@ interface AnthropicResponse {
  * so the transcript always starts on the customer. Guarantees a valid,
  * non-empty payload.
  */
-function normalizeForAnthropic(messages: ChatMessage[]): ChatMessage[] {
+function normalizeForAnthropic(messages: ChatMessage[]): any[] {
   const merged = mergeConsecutive(messages)
   while (merged.length > 0 && merged[0].role === 'assistant') {
     merged.shift()
@@ -31,7 +31,28 @@ function normalizeForAnthropic(messages: ChatMessage[]): ChatMessage[] {
   if (merged.length === 0) {
     return [{ role: 'user', content: '(The customer has not sent a message yet.)' }]
   }
-  return merged
+  return merged.map(m => {
+    if (m.role === 'tool') {
+      return {
+        role: 'user',
+        content: [{ type: 'tool_result', tool_use_id: m.tool_call_id, content: m.content }]
+      }
+    }
+    if (m.role === 'assistant' && m.tool_calls && m.tool_calls.length > 0) {
+      const content: any[] = []
+      if (m.content) content.push({ type: 'text', text: m.content })
+      for (const tc of m.tool_calls) {
+        content.push({
+          type: 'tool_use',
+          id: tc.id,
+          name: tc.function.name,
+          input: JSON.parse(tc.function.arguments || '{}')
+        })
+      }
+      return { role: 'assistant', content }
+    }
+    return { role: m.role, content: m.content }
+  })
 }
 
 /**
@@ -40,7 +61,7 @@ function normalizeForAnthropic(messages: ChatMessage[]): ChatMessage[] {
  * in `generateReply`).
  */
 export async function generateAnthropic(args: ProviderArgs): Promise<ProviderResult> {
-  const { apiKey, model, systemPrompt, messages, timeoutMs } = args
+  const { apiKey, model, systemPrompt, messages, timeoutMs, tools } = args
 
   let res: Response
   try {
@@ -56,6 +77,13 @@ export async function generateAnthropic(args: ProviderArgs): Promise<ProviderRes
         system: systemPrompt,
         max_tokens: MAX_OUTPUT_TOKENS,
         messages: normalizeForAnthropic(messages),
+        ...(tools && tools.length > 0 ? {
+          tools: tools.map(t => ({
+            name: t.function.name,
+            description: t.function.description,
+            input_schema: t.function.parameters,
+          }))
+        } : {}),
       }),
       signal: AbortSignal.timeout(timeoutMs),
     })
@@ -72,8 +100,20 @@ export async function generateAnthropic(args: ProviderArgs): Promise<ProviderRes
     ?.filter((b) => b.type === 'text' && typeof b.text === 'string')
     .map((b) => b.text)
     .join('')
-    .trim()
-  if (!text) {
+    .trim() || ''
+
+  const toolCalls = data?.content
+    ?.filter((b) => b.type === 'tool_use' && b.id && b.name)
+    .map((b) => ({
+      id: b.id!,
+      type: 'function' as const,
+      function: {
+        name: b.name!,
+        arguments: typeof b.input === 'string' ? b.input : JSON.stringify(b.input || {}),
+      }
+    }))
+
+  if (!text && (!toolCalls || toolCalls.length === 0)) {
     throw new AiError('Anthropic returned an empty response.', {
       code: 'empty_response',
     })
@@ -83,5 +123,5 @@ export async function generateAnthropic(args: ProviderArgs): Promise<ProviderRes
     prompt: data?.usage?.input_tokens,
     completion: data?.usage?.output_tokens,
   })
-  return { text, usage }
+  return { text, usage, toolCalls }
 }

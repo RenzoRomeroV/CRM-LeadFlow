@@ -16,6 +16,8 @@ export interface GenerateArgs {
   systemPrompt: string
   /** Recent conversation turns, oldest first. */
   messages: ChatMessage[]
+  /** Optional tools the model can call. */
+  tools?: import('./types').AiTool[]
 }
 
 /**
@@ -24,7 +26,7 @@ export interface GenerateArgs {
  * of the raw text. Throws `AiError` on any provider/network failure.
  */
 export async function generateReply(args: GenerateArgs): Promise<GenerateResult> {
-  const { config, systemPrompt, messages } = args
+  const { config, systemPrompt, messages, tools } = args
   const timeoutMs = aiRequestTimeoutMs()
   const providerArgs = {
     apiKey: config.apiKey,
@@ -32,9 +34,10 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
     systemPrompt,
     messages,
     timeoutMs,
+    tools,
   }
 
-  let result: { text: string; usage: AiUsage | null }
+  let result: import('./types').ProviderResult
   switch (config.provider) {
     case 'openai':
       result = await generateOpenAi(providerArgs)
@@ -52,7 +55,7 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
       })
   }
 
-  return parseGeneration(result.text, result.usage)
+  return parseGeneration(result.text || '', result.usage, result.toolCalls)
 }
 
 /**
@@ -64,9 +67,10 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
  */
 export function parseGeneration(
   raw: string,
-  usage: AiUsage | null = null,
+  usage: import('./types').AiUsage | null = null,
+  toolCalls?: import('./types').AiToolCall[],
 ): GenerateResult {
   const handoff = raw.includes(HANDOFF_SENTINEL)
   const text = raw.split(HANDOFF_SENTINEL).join('').trim()
-  return { text, handoff, usage }
+  return { text, handoff, usage, toolCalls }
 }

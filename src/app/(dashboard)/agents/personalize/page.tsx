@@ -1,9 +1,10 @@
 'use client';
 
-import { Sparkles, Building, CreditCard } from 'lucide-react';
+import { Sparkles, Building, CreditCard, ShoppingBag } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AiPersonalizeConfig } from '@/components/settings/ai-personalize-config';
 import { AiPaymentMethods } from '@/components/settings/ai-payment-methods';
+import { AiProductsCatalog } from '@/components/settings/ai-products-catalog';
 
 export default function AgentsPersonalizePage() {
   return (
@@ -23,6 +24,9 @@ export default function AgentsPersonalizePage() {
           <TabsTrigger value="profile">
             <Building className="mr-1.5 h-4 w-4" /> Datos de la Empresa
           </TabsTrigger>
+          <TabsTrigger value="products">
+            <ShoppingBag className="mr-1.5 h-4 w-4" /> Productos
+          </TabsTrigger>
           <TabsTrigger value="payments">
             <CreditCard className="mr-1.5 h-4 w-4" /> Métodos de Pago
           </TabsTrigger>
@@ -30,6 +34,10 @@ export default function AgentsPersonalizePage() {
 
         <TabsContent value="profile" className="mt-4">
           <AiPersonalizeConfig />
+        </TabsContent>
+
+        <TabsContent value="products" className="mt-4">
+          <AiProductsCatalog />
         </TabsContent>
 
         <TabsContent value="payments" className="mt-4">
