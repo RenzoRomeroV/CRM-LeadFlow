@@ -254,15 +254,39 @@ Si el monto no coincide o no es legible, coméntaselo amablemente para que lo ve
             switch (tc.function.name) {
               case 'create_deal':
                 createDealValue = args.amount !== undefined ? Number(args.amount) : 0
+                messages.push({
+                  role: 'tool',
+                  content: JSON.stringify({ status: 'SUCCESS' }),
+                  tool_call_id: tc.id
+                })
+                shouldLoop = true
                 break
               case 'update_crm_stage':
                 if (args.stage) updateStageName = args.stage
+                messages.push({
+                  role: 'tool',
+                  content: JSON.stringify({ status: 'SUCCESS' }),
+                  tool_call_id: tc.id
+                })
+                shouldLoop = true
                 break
               case 'lose_deal':
                 loseDeal = true
+                messages.push({
+                  role: 'tool',
+                  content: JSON.stringify({ status: 'SUCCESS' }),
+                  tool_call_id: tc.id
+                })
+                shouldLoop = true
                 break
               case 'send_qr_code':
                 if (args.type) sendQrType = args.type.toLowerCase()
+                messages.push({
+                  role: 'tool',
+                  content: JSON.stringify({ status: 'SUCCESS' }),
+                  tool_call_id: tc.id
+                })
+                shouldLoop = true
                 break
               case 'buscar_producto':
                 const query = args.query || ''
