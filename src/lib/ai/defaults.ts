@@ -261,5 +261,17 @@ export const CRM_TOOLS: import('./types').AiTool[] = [
         required: ['query']
       }
     }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'win_deal',
+      description: 'Mark the deal as WON/successful. Use this ONLY after verifying a valid payment voucher where the amount and destination are correct.',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      }
+    }
   }
 ]

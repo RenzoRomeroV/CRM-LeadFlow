@@ -173,9 +173,9 @@ export async function dispatchInboundToAiReply(
           messages.push({
             role: 'user',
             content: `[SISTEMA: El cliente envió una imagen de un comprobante de pago, pero el número de operación (${ocrData.operacion}) YA FUE UTILIZADO ANTERIORMENTE. ¡Es un comprobante duplicado o inválido!
-Reglas estrictas:
-- NUNCA uses la macro [[WIN_DEAL]].
-- Informa al cliente amablemente que ese comprobante ya fue registrado anteriormente y que debe enviar uno nuevo o comunicarse con soporte.]`
+    Reglas estrictas:
+    - NO llames a la herramienta win_deal.
+    - Informa al cliente amablemente que ese comprobante ya fue registrado anteriormente y que debe enviar uno nuevo o comunicarse con soporte.]`
           })
         } else {
           messages.push({
@@ -188,8 +188,8 @@ Por favor, analiza estos datos con las siguientes reglas estrictas:
 2. El "destino" (a quién se pagó) DEBE coincidir con el nombre de nuestra empresa o titular de la cuenta configurada.
 3. La "fecha" DEBE ser reciente (ten en cuenta que hoy es ${new Date().toLocaleDateString()}).
 
-Si TODO es correcto (monto, destino y fecha recientes), confírmale amablemente que su pago fue exitoso y asegúrate de añadir la macro [[WIN_DEAL]] al final de tu mensaje.
-Si ALGO no coincide (monto incorrecto, destino extraño, o fecha muy antigua) o no es legible, coméntaselo amablemente para que lo verifique, y NO uses la macro [[WIN_DEAL]].]`
+Si TODO es correcto (monto, destino y fecha recientes), confírmale amablemente que su pago fue exitoso y DEBES OBLIGATORIAMENTE llamar a la herramienta \`win_deal\`.
+Si ALGO no coincide (monto incorrecto, destino extraño, o fecha muy antigua) o no es legible, coméntaselo amablemente para que lo verifique, y NO llames a \`win_deal\`.]`
           })
         }
       }
@@ -284,6 +284,15 @@ Si ALGO no coincide (monto incorrecto, destino extraño, o fecha muy antigua) o 
                 })
                 shouldLoop = true
                 break
+              case 'win_deal':
+                winDeal = true
+                messages.push({
+                  role: 'tool',
+                  content: JSON.stringify({ status: 'SUCCESS' }),
+                  tool_call_id: tc.id
+                })
+                shouldLoop = true
+                break
               case 'send_qr_code':
                 if (args.type) sendQrType = args.type.toLowerCase()
                 messages.push({
@@ -350,6 +359,7 @@ Si ALGO no coincide (monto incorrecto, destino extraño, o fecha muy antigua) o 
       }
     }
     
+    // Fallback: If AI still output the text macro, we support it
     if (finalText && finalText.includes('[[WIN_DEAL]]')) {
       winDeal = true
       finalText = finalText.replace('[[WIN_DEAL]]', '').trim()
