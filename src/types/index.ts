@@ -57,6 +57,7 @@ export interface Account {
   name: string;
   /** auth.users.id of the immutable owner. */
   owner_user_id: string;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }
