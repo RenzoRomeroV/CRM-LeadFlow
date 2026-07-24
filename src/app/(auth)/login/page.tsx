@@ -57,7 +57,13 @@ function LoginPageInner() {
     });
 
     if (error) {
-      setError(error.message);
+      let msg = error.message;
+      if (msg === "Email not confirmed") {
+        msg = "El correo electrónico no ha sido confirmado. Por favor revisa tu bandeja de entrada.";
+      } else if (msg === "Invalid login credentials") {
+        msg = "Credenciales de inicio de sesión no válidas.";
+      }
+      setError(msg);
       setLoading(false);
       return;
     }
