@@ -4,14 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string, action: string } }
+  { params }: { params: Promise<{ id: string, action: string }> }
 ) {
   if (!validateApiKey(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { id, action } = params;
+    const { id, action } = await params;
 
     if (action !== "suspend" && action !== "activate") {
       return NextResponse.json(
