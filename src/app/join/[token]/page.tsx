@@ -66,9 +66,9 @@ interface PeekFail {
 type PeekResult = PeekOk | PeekFail;
 
 const ROLE_LABEL: Record<PeekOk['role'], string> = {
-  admin: 'Admin',
-  agent: 'Agent',
-  viewer: 'Viewer',
+  admin: 'Administrador',
+  agent: 'Agente',
+  viewer: 'Lector',
 };
 
 const FAIL_COPY: Record<PeekFail['reason'], { title: string; body: string }> = {
@@ -223,7 +223,7 @@ export default function JoinPage() {
       <Card className="w-full max-w-md border-border bg-card">
         <CardContent className="flex flex-col items-center gap-3 py-12">
           <Loader2 className="size-6 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Verifying invitation…</p>
+          <p className="text-sm text-muted-foreground">Verificando invitación…</p>
         </CardContent>
       </Card>
     );
@@ -297,17 +297,17 @@ export default function JoinPage() {
         <UsersRound className="h-6 w-6 text-primary" />
       </div>
       <CardTitle className="text-xl text-foreground">
-        You&apos;re invited to{' '}
+        Has sido invitado a{' '}
         <span className="text-primary">{peek.account_name}</span>
       </CardTitle>
       <CardDescription className="text-muted-foreground">
-        You&apos;ll join as{' '}
+        Te unirás como{' '}
         <span className="inline-flex items-center gap-1 text-foreground">
           <ShieldCheck className="size-3.5 text-primary" />
           {ROLE_LABEL[peek.role]}
         </span>
-        . Link valid until{' '}
-        {new Date(peek.expires_at).toLocaleDateString(undefined, {
+        . Enlace válido hasta el{' '}
+        {new Date(peek.expires_at).toLocaleDateString('es', {
           year: 'numeric',
           month: 'short',
           day: 'numeric',
@@ -332,19 +332,19 @@ export default function JoinPage() {
               {accepting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Accepting…
+                  Aceptando…
                 </>
               ) : (
                 <>
                   <CheckCircle className="size-4" />
-                  Accept invitation
+                  Aceptar invitación
                 </>
               )}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              Accepting moves your login into{' '}
-              <span className="text-muted-foreground">{peek.account_name}</span>. Your
-              empty personal account from signup will be cleaned up.
+              Al aceptar, tu inicio de sesión se trasladará a{' '}
+              <span className="text-muted-foreground">{peek.account_name}</span>. Tu
+              cuenta personal vacía creada en el registro será eliminada.
             </p>
           </CardContent>
         </Card>
@@ -363,7 +363,7 @@ export default function JoinPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-popover-foreground">
                 <AlertTriangle className="size-4 text-amber-400" />
-                Can&apos;t join {peek.account_name} with this account
+                No puedes unirte a {peek.account_name} con esta cuenta
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 {conflictMessage}
@@ -371,11 +371,10 @@ export default function JoinPage() {
             </DialogHeader>
             <div className="space-y-2 py-2 text-xs text-muted-foreground">
               <p>
-                To join{' '}
+                Para unirte a{' '}
                 <span className="text-popover-foreground">{peek.account_name}</span>,
-                sign out and sign up again with a different email address.
-                The invite link stays valid as long as it hasn&apos;t
-                expired.
+                cierra sesión y regístrate de nuevo con un correo electrónico diferente.
+                El enlace de invitación seguirá siendo válido mientras no haya expirado.
               </p>
             </div>
             <DialogFooter className="bg-popover border-border">
@@ -384,7 +383,7 @@ export default function JoinPage() {
                 onClick={() => setConflictMessage(null)}
                 className="border-border text-popover-foreground hover:bg-muted"
               >
-                Stay signed in
+                Permanecer conectado
               </Button>
               <Button
                 onClick={handleSignOutAndRetry}
@@ -394,10 +393,10 @@ export default function JoinPage() {
                 {signingOut ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    Signing out…
+                    Cerrando sesión…
                   </>
                 ) : (
-                  'Sign out & use a different email'
+                  'Cerrar sesión y usar otro correo'
                 )}
               </Button>
             </DialogFooter>
@@ -414,7 +413,7 @@ export default function JoinPage() {
       <CardContent className="flex flex-col gap-2">
         <Link href={`/signup?invite=${encodeURIComponent(token!)}`}>
           <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            Create account &amp; join
+            Crear cuenta y unirse
           </Button>
         </Link>
         <Link href={`/login?invite=${encodeURIComponent(token!)}`}>
@@ -422,7 +421,7 @@ export default function JoinPage() {
             variant="outline"
             className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            I already have an account
+            Ya tengo una cuenta
           </Button>
         </Link>
       </CardContent>
