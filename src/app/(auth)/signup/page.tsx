@@ -98,12 +98,12 @@ function SignupPageInner() {
               <CheckCircle className="h-6 w-6 text-primary" />
             </div>
             <CardTitle className="text-xl text-foreground">
-              Check your email
+              Revisa tu correo
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              We&apos;ve sent a confirmation link to{" "}
-              <span className="text-foreground">{email}</span>. Please check your
-              inbox and click the link to verify your account.
+              Hemos enviado un enlace de confirmación a{" "}
+              <span className="text-foreground">{email}</span>. Por favor, revisa tu
+              bandeja de entrada y haz clic en el enlace para verificar tu cuenta.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -118,7 +118,7 @@ function SignupPageInner() {
                 variant="outline"
                 className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
               >
-                Back to sign in
+                Volver a iniciar sesión
               </Button>
             </Link>
           </CardContent>
@@ -141,11 +141,11 @@ function SignupPageInner() {
             </div>
           )}
           <CardTitle className="text-xl text-foreground">
-            {inviteToken ? "Create account & join" : "Crear una cuenta"}
+            {inviteToken ? "Crear cuenta y unirse" : "Crear una cuenta"}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {inviteToken
-              ? "Verify your email, then accept the invitation to join your team."
+              ? "Verifica tu correo electrónico, luego acepta la invitación para unirte al equipo."
               : "Comienza a usar LeadFlow"}
           </CardDescription>
         </CardHeader>
@@ -164,7 +164,7 @@ function SignupPageInner() {
               <Input
                 id="fullName"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Juan Pérez"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -189,12 +189,12 @@ function SignupPageInner() {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="password" className="text-muted-foreground">
-                Password
+                Contraseña
               </Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="At least 6 characters"
+                placeholder="Al menos 6 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -204,12 +204,12 @@ function SignupPageInner() {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="confirmPassword" className="text-muted-foreground">
-                Confirmar password
+                Confirmar contraseña
               </Label>
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Repeat your password"
+                placeholder="Repite tu contraseña"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
